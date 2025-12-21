@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Tiếp nhận xe</h2>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card p-3">
+            <form method="post">
+                <input type="text" name="phone" class="form-control mb-2" placeholder="Số điện thoại" required>
+                <input type="text" name="name" class="form-control mb-2" placeholder="Tên khách hàng" required>
+                <input type="text" name="address" class="form-control mb-2" placeholder="Địa chỉ">
+                <hr>
+                <input type="text" name="plate" class="form-control mb-2" placeholder="Biển số" required>
+                <input type="text" name="brand" class="form-control mb-2" placeholder="Hiệu xe">
+                <textarea name="issue" class="form-control mb-2" placeholder="Mô tả lỗi"></textarea>
+                <button class="btn btn-success w-100">Lưu phiếu</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <table class="table table-bordered">
+            <thead class="table-dark"><tr><th>Biển số</th><th>Khách</th><th>Giờ</th><th>Trạng thái</th><th>Tác vụ</th></tr></thead>
+            <tbody>
+                {% for t in tickets %}
+                <tr>
+                    <td>{{ t.xe.bien_so }}</td>
+                    <td>{{ t.xe.khach_hang.ten }}</td>
+                    <td>{{ t.ngay_tiep_nhan.strftime('%H:%M') }}</td>
+                    <td>{{ t.trang_thai.value }}</td>
+                    <td>
+                        {% if t.trang_thai.name == 'CHO_SUA' %}
+                        <a href="/repair?id={{ t.id }}" class="btn btn-primary btn-sm">Sửa chữa</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

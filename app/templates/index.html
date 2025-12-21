@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4">QUẢN LÝ GARA CHUYÊN NGHIỆP</h1>
+    {% if not current_user.is_authenticated %}
+        <a href="/login" class="btn btn-lg btn-primary mt-3">Đăng nhập ngay</a>
+    {% else %}
+        <div class="row mt-5 justify-content-center">
+            {% if current_user.vai_tro.name in ['TIEP_NHAN', 'ADMIN'] %}
+            <div class="col-md-4 mb-3">
+                <div class="card p-4 bg-light"><h3>Tiếp nhận</h3><a href="/reception" class="btn btn-info w-100">Vào ngay</a></div>
+            </div>
+            {% endif %}
+
+            {% if current_user.vai_tro.name in ['KY_THUAT', 'ADMIN'] %}
+            <div class="col-md-4 mb-3">
+                <div class="card p-4 bg-light"><h3>Sửa chữa</h3><p>Xem danh sách chờ</p><a href="/reception" class="btn btn-primary w-100">DS Xe</a></div>
+            </div>
+            {% endif %}
+
+            {% if current_user.vai_tro.name in ['THU_NGAN', 'ADMIN'] %}
+            <div class="col-md-4 mb-3">
+                <div class="card p-4 bg-light"><h3>Thanh toán</h3><a href="/payment" class="btn btn-success w-100">Vào ngay</a></div>
+            </div>
+            {% endif %}
+
+            {% if current_user.vai_tro.name == 'ADMIN' %}
+            <div class="col-md-4 mb-3">
+                <div class="card p-4 bg-light"><h3>Quản trị</h3><a href="/admin" class="btn btn-dark w-100">Cấu hình</a></div>
+            </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

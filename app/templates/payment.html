@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-success text-white">
+        <h4 class="mb-0">THANH TOÁN & TRẢ XE</h4>
+    </div>
+    <div class="card-body">
+        {% if list %}
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Biển số</th>
+                    <th>Ngày nhận</th>
+                    <th>Tiền công</th>
+                    <th>Tiền vật tư</th>
+                    <th class="text-center">Tác vụ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in list %}
+                <tr>
+                    <td class="fw-bold">{{ p.phieu_tiep_nhan.xe.bien_so }}</td>
+                    <td>{{ p.phieu_tiep_nhan.ngay_tiep_nhan.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ "{:,.0f}".format(p.tien_cong) }} đ</td>
+                    <td>
+                        {% set ns = namespace(t=0) %}
+                        {% for c in p.chi_tiet %}{% set ns.t = ns.t + c.don_gia*c.so_luong %}{% endfor %}
+                        {{ "{:,.0f}".format(ns.t) }} đ
+                    </td>
+                    <td class="text-center">
+                        <form method="post" onsubmit="return confirm('Xác nhận thanh toán và xuất hóa đơn cho xe {{ p.phieu_tiep_nhan.xe.bien_so }}?');">
+                            <input type="hidden" name="repair_id" value="{{ p.id }}">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                ✅ Thu tiền
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="alert alert-info text-center">
+            Hiện không có xe nào đang chờ thanh toán.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
