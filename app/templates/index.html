@@ -1,32 +1,195 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="text-center py-5">
-    <h1 class="display-4">QUẢN LÝ GARA CHUYÊN NGHIỆP</h1>
+<div class="fade-in">
+    <!-- Header Dashboard -->
+    <div class="mb-8 flex justify-between items-end">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Tổng quan công việc</h2>
+            <p class="text-gray-500 text-sm mt-1">
+                {% if current_user.is_authenticated %}
+                    Xin chào {{ current_user.ten }}, chúc bạn một ngày làm việc hiệu quả!
+                {% else %}
+                    Hệ thống quản lý dịch vụ Gara chuyên nghiệp.
+                {% endif %}
+            </p>
+        </div>
+        <div class="text-sm bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-gray-600">
+            <i class="fa-regular fa-calendar mr-2"></i> {{ today_date if today_date else "Hôm nay" }}
+        </div>
+    </div>
+
+    <!-- TRƯỜNG HỢP CHƯA ĐĂNG NHẬP -->
     {% if not current_user.is_authenticated %}
-        <a href="/login" class="btn btn-lg btn-primary mt-3">Đăng nhập ngay</a>
+        <div class="flex flex-col items-center justify-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="bg-blue-50 p-4 rounded-full mb-4"><i class="fa-solid fa-lock text-blue-600 text-3xl"></i></div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Hệ thống yêu cầu đăng nhập</h3>
+            <p class="text-gray-500 mb-6">Vui lòng đăng nhập để truy cập các chức năng quản lý.</p>
+            <a href="/login" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-bold transition shadow-lg shadow-blue-200">
+                Đăng nhập ngay
+            </a>
+        </div>
+
+    <!-- TRƯỜNG HỢP ĐÃ ĐĂNG NHẬP -->
     {% else %}
-        <div class="row mt-5 justify-content-center">
+        <!-- 1. CÁC THẺ THỐNG KÊ (QUICK ACTIONS) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+            <!-- Card Tiếp Nhận (Hiện cho Tiếp nhận & Admin) -->
             {% if current_user.vai_tro.name in ['TIEP_NHAN', 'ADMIN'] %}
-            <div class="col-md-4 mb-3">
-                <div class="card p-4 bg-light"><h3>Tiếp nhận</h3><a href="/reception" class="btn btn-info w-100">Vào ngay</a></div>
+            <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500 hover:shadow-md transition cursor-pointer group relative overflow-hidden">
+                <div class="flex justify-between items-start z-10 relative">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tiếp nhận hôm nay</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1">
+                            {{ tickets|length if tickets else 0 }} <span class="text-sm font-normal text-gray-500">xe</span>
+                        </h3>
+                    </div>
+                    <div class="p-3 bg-blue-50 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-file-pen text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <a href="/reception" class="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center">
+                        Tạo phiếu mới <i class="fa-solid fa-arrow-right ml-auto transition-transform group-hover:translate-x-1"></i>
+                    </a>
+                </div>
             </div>
             {% endif %}
 
+            <!-- Card Chờ Sửa (Hiện cho Kỹ thuật & Admin) -->
             {% if current_user.vai_tro.name in ['KY_THUAT', 'ADMIN'] %}
-            <div class="col-md-4 mb-3">
-                <div class="card p-4 bg-light"><h3>Sửa chữa</h3><p>Xem danh sách chờ</p><a href="/reception" class="btn btn-primary w-100">DS Xe</a></div>
+            {% set waiting_count = tickets | selectattr("trang_thai.name", "equalto", "CHO_SUA") | list | length %}
+            <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-orange-500 hover:shadow-md transition cursor-pointer group">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Xe chờ sửa</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1">
+                            {{ waiting_count }} <span class="text-sm font-normal text-gray-500">xe</span>
+                        </h3>
+                    </div>
+                    <div class="p-3 bg-orange-50 rounded-lg text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-screwdriver-wrench text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <a href="/reception" class="text-sm font-medium text-orange-600 hover:text-orange-800 flex items-center">
+                        Xem danh sách <i class="fa-solid fa-arrow-right ml-auto transition-transform group-hover:translate-x-1"></i>
+                    </a>
+                </div>
             </div>
             {% endif %}
 
+            <!-- Card Thu Ngân (Hiện cho Thu ngân & Admin) -->
             {% if current_user.vai_tro.name in ['THU_NGAN', 'ADMIN'] %}
-            <div class="col-md-4 mb-3">
-                <div class="card p-4 bg-light"><h3>Thanh toán</h3><a href="/payment" class="btn btn-success w-100">Vào ngay</a></div>
+            <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500 hover:shadow-md transition cursor-pointer group">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tài chính</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1">Thanh Toán</h3>
+                    </div>
+                    <div class="p-3 bg-green-50 rounded-lg text-green-600 group-hover:bg-green-600 group-hover:text-white transition">
+                        <i class="fa-solid fa-cash-register text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <a href="/payment" class="text-sm font-medium text-green-600 hover:text-green-800 flex items-center">
+                        Đến thu ngân <i class="fa-solid fa-arrow-right ml-auto transition-transform group-hover:translate-x-1"></i>
+                    </a>
+                </div>
             </div>
             {% endif %}
 
+            <!-- Card Admin -->
             {% if current_user.vai_tro.name == 'ADMIN' %}
-            <div class="col-md-4 mb-3">
-                <div class="card p-4 bg-light"><h3>Quản trị</h3><a href="/admin" class="btn btn-dark w-100">Cấu hình</a></div>
+            <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-gray-600 hover:shadow-md transition cursor-pointer group">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Hệ thống</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1">Admin</h3>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg text-gray-600 group-hover:bg-gray-700 group-hover:text-white transition">
+                        <i class="fa-solid fa-shield-halved text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <a href="/admin" class="text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center">
+                        Cấu hình <i class="fa-solid fa-arrow-right ml-auto transition-transform group-hover:translate-x-1"></i>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 2. BẢNG DANH SÁCH CÔNG VIỆC GẦN ĐÂY -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-gray-800">
+                    <i class="fa-solid fa-clock-rotate-left mr-2 text-blue-500"></i>Hoạt động gần đây
+                </h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3">Biển số</th>
+                            <th class="px-6 py-3">Khách hàng</th>
+                            <th class="px-6 py-3">Thời gian</th>
+                            <th class="px-6 py-3 text-center">Trạng thái</th>
+                            <th class="px-6 py-3 text-center">Tác vụ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <!-- Lặp qua biến tickets -->
+                        {% if tickets and tickets|length > 0 %}
+                            {% for t in tickets[:10] %} <!-- Chỉ hiện 10 dòng đầu -->
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4 font-bold text-blue-600">{{ t.xe.bien_so }}</td>
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-gray-900">{{ t.xe.khach_hang.ten }}</div>
+                                    <div class="text-xs text-gray-500">{{ t.xe.khach_hang.dien_thoai }}</div>
+                                </td>
+                                <td class="px-6 py-4">{{ t.ngay_tiep_nhan.strftime('%d/%m %H:%M') }}</td>
+                                <td class="px-6 py-4 text-center">
+                                    {% if t.trang_thai.name == 'CHO_SUA' %}
+                                        <span class="inline-flex items-center bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full border border-yellow-200">
+                                            <span class="w-2 h-2 me-1 bg-yellow-500 rounded-full"></span> Chờ sửa
+                                        </span>
+                                    {% elif t.trang_thai.name == 'DANG_SUA' %}
+                                        <span class="inline-flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-200">
+                                            <span class="w-2 h-2 me-1 bg-blue-500 rounded-full"></span> Đang sửa
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full border border-green-200">
+                                            <span class="w-2 h-2 me-1 bg-green-500 rounded-full"></span> Hoàn tất
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    {% if t.trang_thai.name == 'CHO_SUA' and current_user.vai_tro.name in ['KY_THUAT', 'ADMIN'] %}
+                                        <a href="/repair?id={{ t.id }}" class="text-blue-600 hover:text-blue-900 font-medium text-xs border border-blue-200 bg-blue-50 px-2 py-1 rounded">Sửa ngay</a>
+                                    {% else %}
+                                        <span class="text-gray-400">--</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-10 text-center text-gray-400">
+                                    <i class="fa-regular fa-folder-open text-3xl mb-2 opacity-50"></i>
+                                    <p>Chưa có dữ liệu nào trong hệ thống.</p>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if tickets %}
+            <div class="px-6 py-3 border-t border-gray-100 bg-gray-50 text-center">
+                <a href="/reception" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                    Xem toàn bộ danh sách <i class="fa-solid fa-arrow-right ml-1"></i>
+                </a>
             </div>
             {% endif %}
         </div>

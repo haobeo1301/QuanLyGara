@@ -1,49 +1,181 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="card shadow-sm">
-    <div class="card-header bg-success text-white">
-        <h4 class="mb-0">THANH TOÁN & TRẢ XE</h4>
+<div class="fade-in h-full flex flex-col">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa-solid fa-cash-register mr-3 text-green-600"></i>Thanh toán dịch vụ
+        </h2>
     </div>
-    <div class="card-body">
-        {% if list %}
-        <table class="table table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Biển số</th>
-                    <th>Ngày nhận</th>
-                    <th>Tiền công</th>
-                    <th>Tiền vật tư</th>
-                    <th class="text-center">Tác vụ</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in list %}
-                <tr>
-                    <td class="fw-bold">{{ p.phieu_tiep_nhan.xe.bien_so }}</td>
-                    <td>{{ p.phieu_tiep_nhan.ngay_tiep_nhan.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ "{:,.0f}".format(p.tien_cong) }} đ</td>
-                    <td>
-                        {% set ns = namespace(t=0) %}
-                        {% for c in p.chi_tiet %}{% set ns.t = ns.t + c.don_gia*c.so_luong %}{% endfor %}
-                        {{ "{:,.0f}".format(ns.t) }} đ
-                    </td>
-                    <td class="text-center">
-                        <form method="post" onsubmit="return confirm('Xác nhận thanh toán và xuất hóa đơn cho xe {{ p.phieu_tiep_nhan.xe.bien_so }}?');">
-                            <input type="hidden" name="repair_id" value="{{ p.id }}">
-                            <button type="submit" class="btn btn-success btn-sm">
-                                ✅ Thu tiền
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="alert alert-info text-center">
-            Hiện không có xe nào đang chờ thanh toán.
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 overflow-hidden">
+
+        <!-- CỘT TRÁI: DANH SÁCH CHỜ THANH TOÁN (Mục DS Phiếu 1.1) -->
+        <div class="lg:col-span-8 flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-[calc(100vh-180px)]">
+            <!-- Filter Bar -->
+            <div class="p-4 border-b border-gray-200 bg-gray-50 flex gap-2">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fa-solid fa-search"></i></span>
+                    <input type="text" id="searchPayment" class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Tìm biển số, khách hàng...">
+                </div>
+                <select class="border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white">
+                    <option>Tất cả</option>
+                    <option>Hôm nay</option>
+                </select>
+                <button class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+
+            <!-- List -->
+            <div class="flex-1 overflow-y-auto">
+                <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0">
+                        <tr>
+                            <th class="px-4 py-3">Biển số</th>
+                            <th class="px-4 py-3">Khách hàng</th>
+                            <th class="px-4 py-3 text-right">Tiền công</th>
+                            <th class="px-4 py-3 text-right">Vật tư</th>
+                            <th class="px-4 py-3 text-right">Tổng (tạm)</th>
+                            <th class="px-4 py-3 text-center">Tác vụ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for p in list %}
+                        {% set tong_vt = namespace(value=0) %}
+                        {% for c in p.chi_tiet %}
+                            {% set tong_vt.value = tong_vt.value + (c.so_luong * c.don_gia) %}
+                        {% endfor %}
+                        <tr class="hover:bg-blue-50 transition cursor-pointer group" onclick="selectPayment('{{ p.id }}', '{{ p.phieu_tiep_nhan.xe.bien_so }}', '{{ p.tien_cong }}', '{{ tong_vt.value }}')">
+                            <td class="px-4 py-3 font-bold text-blue-600">{{ p.phieu_tiep_nhan.xe.bien_so }}</td>
+                            <td class="px-4 py-3">{{ p.phieu_tiep_nhan.xe.khach_hang.ten }}</td>
+                            <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(p.tien_cong) }}</td>
+                            <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(tong_vt.value) }}</td>
+                            <td class="px-4 py-3 text-right font-bold text-gray-800">{{ "{:,.0f}".format(p.tien_cong + tong_vt.value) }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="text-green-600 bg-green-50 hover:bg-green-100 p-2 rounded-lg text-xs font-bold transition group-hover:scale-105 shadow-sm">
+                                    Chọn <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-10 text-center text-gray-400">Không có xe nào chờ thanh toán.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-        {% endif %}
+
+        <!-- CỘT PHẢI: FORM THANH TOÁN (Mục Payment 2, 3, 4) -->
+        <div class="lg:col-span-4 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col h-[calc(100vh-180px)]">
+            <div class="p-5 border-b border-gray-100 bg-gray-50">
+                <h3 class="font-bold text-gray-800">Thông tin thanh toán</h3>
+                <p class="text-xs text-gray-500 mt-1">Vui lòng chọn phiếu bên trái</p>
+            </div>
+
+            <form method="post" class="flex-1 flex flex-col" id="paymentForm">
+                <input type="hidden" name="repair_id" id="selected_repair_id">
+
+                <div class="p-5 flex-1 overflow-y-auto space-y-4">
+                    <!-- Thông tin tóm tắt -->
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        <div class="flex justify-between mb-1">
+                            <span class="text-xs text-gray-500">Biển số xe</span>
+                            <span class="text-sm font-bold text-gray-800" id="display_plate">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-xs text-gray-500">Mã phiếu</span>
+                            <span class="text-sm font-medium text-gray-800" id="display_id">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Method Tabs (Mục 2) -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Phương thức thanh toán</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="method" value="cash" class="peer sr-only" checked>
+                                <div class="text-center py-2 border rounded-lg peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600 transition hover:bg-gray-50 text-sm font-medium text-gray-600">
+                                    <i class="fa-solid fa-money-bill-1 mr-1"></i> Tiền mặt
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="method" value="transfer" class="peer sr-only">
+                                <div class="text-center py-2 border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition hover:bg-gray-50 text-sm font-medium text-gray-600">
+                                    <i class="fa-solid fa-qrcode mr-1"></i> Chuyển khoản
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Options (Mục 4) -->
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500" checked>
+                            <span class="text-sm text-gray-700">In hóa đơn ngay</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">Gửi hóa đơn qua Email</span>
+                        </label>
+                    </div>
+
+                    <hr class="border-dashed border-gray-300">
+
+                    <!-- Totals -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Thành tiền:</span>
+                            <span class="font-medium" id="display_subtotal">0</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">VAT (10%):</span>
+                            <span class="font-medium" id="display_vat">0</span>
+                        </div>
+                        <div class="flex justify-between items-end pt-2 border-t border-gray-100 mt-2">
+                            <span class="font-bold text-gray-800">TỔNG THANH TOÁN</span>
+                            <span class="text-2xl font-bold text-green-600" id="display_total">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions (Mục 6, 7, 8) -->
+                <div class="p-5 border-t border-gray-100 bg-gray-50 grid grid-cols-2 gap-3">
+                    <button type="button" class="bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-100 transition">
+                        Lưu Nháp
+                    </button>
+                    <button type="submit" id="btnPay" class="bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed" disabled onclick="return confirm('Xác nhận thanh toán?');">
+                        <i class="fa-solid fa-check mr-1"></i> XÁC NHẬN
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<script>
+    function selectPayment(id, plate, labor, parts) {
+        // Cập nhật UI bên phải
+        document.getElementById('selected_repair_id').value = id;
+        document.getElementById('display_plate').innerText = plate;
+        document.getElementById('display_id').innerText = 'PSC-' + id;
+
+        // Tính toán tiền
+        let subtotal = parseFloat(labor) + parseFloat(parts);
+        let vat = subtotal * 0.1;
+        let total = subtotal + vat;
+
+        // Format tiền
+        const fmt = (n) => n.toLocaleString('vi-VN') + ' đ';
+
+        document.getElementById('display_subtotal').innerText = fmt(subtotal);
+        document.getElementById('display_vat').innerText = fmt(vat);
+        document.getElementById('display_total').innerText = fmt(total);
+
+        // Enable nút
+        document.getElementById('btnPay').disabled = false;
+
+        // Hiệu ứng visual (active row)
+        // (Có thể thêm class active cho row nếu cần)
+    }
+</script>
 {% endblock %}

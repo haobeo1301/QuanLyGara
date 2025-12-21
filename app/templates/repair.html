@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 {% if ticket %}
-<h3>Lập phiếu sửa chữa: {{ ticket.xe.bien_so }}</h3>
+<h3>Sửa xe: {{ ticket.xe.bien_so }}</h3>
 <div class="row">
     <div class="col-md-6">
         <input type="text" class="form-control mb-2" placeholder="Tìm phụ tùng..." oninput="tim(this.value)">
@@ -9,12 +9,12 @@
     </div>
     <div class="col-md-6">
         <div class="card p-3">
-            <h5>Vật tư đã chọn</h5>
+            <h5>Vật tư chọn</h5>
             <ul id="cart" class="list-group mb-3"></ul>
             <form method="post">
-                <label>Tiền công (VNĐ)</label>
+                <label>Tiền công</label>
                 <input type="number" name="labor" class="form-control mb-3" value="0">
-                <button class="btn btn-danger w-100">Hoàn tất sửa chữa</button>
+                <button class="btn btn-danger w-100">Hoàn tất</button>
             </form>
         </div>
     </div>
@@ -22,7 +22,7 @@
 <script>
 function tim(kw){
     fetch(`/api/parts?kw=${kw}`).then(r=>r.json()).then(d=>{
-        let h=''; d.forEach(p=>h+=`<button type="button" onclick="add(${p.id},'${p.ten}',${p.gia})" class="list-group-item list-group-item-action">${p.ten} - ${p.gia.toLocaleString()} đ (Kho: ${p.ton})</button>`);
+        let h=''; d.forEach(p=>h+=`<button onclick="add(${p.id},'${p.ten}',${p.gia})" class="list-group-item list-group-item-action">${p.ten} - ${p.gia}</button>`);
         document.getElementById('list').innerHTML=h;
     })
 }
@@ -36,6 +36,6 @@ function add(id,n,p){
 tim('');
 </script>
 {% else %}
-<div class="alert alert-warning">Chưa chọn xe nào để sửa!</div>
+<div class="alert alert-warning">Chưa chọn xe!</div>
 {% endif %}
 {% endblock %}

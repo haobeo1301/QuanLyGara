@@ -1,26 +1,16 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2>Thanh toán</h2>
-<table class="table table-striped">
-    <thead><tr><th>Xe</th><th>Tiền công</th><th>Tiền vật tư</th><th>Tác vụ</th></tr></thead>
-    <tbody>
-        {% for p in list %}
-        <tr>
-            <td>{{ p.phieu_tiep_nhan.xe.bien_so }}</td>
-            <td>{{ "{:,.0f}".format(p.tien_cong) }}</td>
-            <td>
-                {% set ns = namespace(t=0) %}
-                {% for c in p.chi_tiet %}{% set ns.t = ns.t + c.don_gia*c.so_luong %}{% endfor %}
-                {{ "{:,.0f}".format(ns.t) }}
-            </td>
-            <td>
-                <form method="post" style="display:inline">
-                    <input type="hidden" name="repair_id" value="{{ p.id }}">
-                    <button class="btn btn-success btn-sm">Thu tiền & Xuất HĐ</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<h2>Báo cáo doanh thu</h2>
+<form class="row g-3 mb-4">
+    <div class="col-auto"><input type="number" name="month" class="form-control" value="{{ m }}"></div>
+    <div class="col-auto"><input type="number" name="year" class="form-control" value="{{ y }}"></div>
+    <div class="col-auto"><button class="btn btn-primary">Xem</button></div>
+</form>
+<canvas id="chart"></canvas>
+<script>
+    new Chart(document.getElementById('chart'), {
+        type: 'bar',
+        data: { labels: {{ labels | tojson }}, datasets: [{label:'Doanh thu', data: {{ values | tojson }}, backgroundColor:'blue'}] }
+    });
+</script>
 {% endblock %}

@@ -1,24 +1,55 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-4">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center">
-                <h5 class="mb-0">QUẢN LÝ GARA</h5>
+<div class="min-h-[80vh] flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 w-full max-w-md animate-fade-in">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4">
+                <i class="fa-solid fa-car-wrench text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Đăng nhập hệ thống</h2>
+            <p class="text-gray-500 text-sm mt-2">Quản lý Gara chuyên nghiệp</p>
+        </div>
+
+        <form method="post" action="{{ url_for('main.login_view') }}" class="space-y-5">
+            <!-- Username -->
+            <div>
+                <label class="block mb-2 text-sm font-medium text-gray-700">Tên đăng nhập</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+                    <input type="text" name="username" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5" placeholder="Nhập username (vd: admin)" required>
+                </div>
             </div>
 
-            <div class="card-body">
-                <form method="post" action="{{ url_for('main.login_view') }}">
-                    <div class="mb-3"> <label>Tên đăng nhập</label>
-                        <input type="text" name="username" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Mật khẩu</label>
-                        <input type="password" name="password" class="form-control" required>
-                    </div>
-                    <button class="btn btn-primary w-100">Đăng nhập</button>
-                </form>
+            <!-- Password -->
+            <div>
+                <label class="block mb-2 text-sm font-medium text-gray-700">Mật khẩu</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" name="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5" placeholder="••••••••" required>
+                </div>
             </div>
+
+            <!-- Options (Mục Login 1.2.3 & 1.2.4) -->
+            <div class="flex items-center justify-between text-sm">
+                <label class="flex items-center text-gray-600 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <span class="ml-2">Ghi nhớ đăng nhập</span>
+                </label>
+                <a href="#" class="text-blue-600 hover:underline font-medium">Quên mật khẩu?</a>
+            </div>
+
+            <!-- Submit Button (Mục Login 1.2.1) -->
+            <button type="submit" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-bold rounded-lg text-sm px-5 py-3 text-center transition-transform active:scale-95">
+                ĐĂNG NHẬP
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-xs text-gray-400">
+            &copy; 2025 Garage System v1.0
         </div>
     </div>
 </div>
