@@ -14,28 +14,37 @@
         <form action="/report" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Loại thống kê</label>
-                <select name="type" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500 font-medium">
-                    <option value="revenue" {{ 'selected' if filter.type == 'revenue' }}>💰 Doanh thu</option>
-                    <option value="reception" {{ 'selected' if filter.type == 'reception' }}>🚗 Số lượng xe vào</option>
-                    <option value="parts" {{ 'selected' if filter.type == 'parts' }}>⚙️ Linh kiện bán chạy</option>
-                    <option value="issues" {{ 'selected' if filter.type == 'issues' }}>⚠️ Top lỗi hư hỏng</option>
+                <select name="type"
+                        class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500 font-medium">
+                    <option value="revenue" {{
+                    'selected' if filter.type == 'revenue' }}>💰 Doanh thu</option>
+                    <option value="reception" {{
+                    'selected' if filter.type == 'reception' }}>🚗 Số lượng xe vào</option>
+                    <option value="parts" {{
+                    'selected' if filter.type == 'parts' }}>⚙️ Linh kiện bán chạy</option>
+                    <option value="issues" {{
+                    'selected' if filter.type == 'issues' }}>⚠️ Top lỗi hư hỏng</option>
                 </select>
             </div>
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Từ ngày</label>
-                <input type="date" name="from_date" value="{{ filter.from }}" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+                <input type="date" name="from_date" value="{{ filter.from }}" required
+                       class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
             </div>
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Đến ngày</label>
-                <input type="date" name="to_date" value="{{ filter.to }}" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+                <input type="date" name="to_date" value="{{ filter.to }}" required
+                       class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-sm">
+                <button type="submit"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-sm">
                     <i class="fa-solid fa-magnifying-glass mr-1"></i> Xem
                 </button>
                 {% if report_data.data %}
                 <a href="{{ url_for('main.export_report', type=filter.type, from_date=filter.from, to_date=filter.to) }}"
-                   class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-sm" title="Xuất CSV">
+                   class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-sm"
+                   title="Xuất CSV">
                     <i class="fa-solid fa-download"></i>
                 </a>
                 {% endif %}
@@ -44,14 +53,16 @@
     </div>
 
     {% if not report_data.data %}
-         {% if error_msg %}
-            <div class="p-4 mb-4 text-red-700 bg-red-100 rounded-lg border border-red-300 text-center font-bold">{{ error_msg }}</div>
-         {% else %}
-            <div class="p-10 text-center text-gray-400 bg-white rounded-xl border border-dashed border-gray-300">
-                <i class="fa-solid fa-chart-simple text-4xl mb-3 opacity-20"></i>
-                <p>Không có dữ liệu hiển thị.</p>
-            </div>
-         {% endif %}
+    {% if error_msg %}
+    <div class="p-4 mb-4 text-red-700 bg-red-100 rounded-lg border border-red-300 text-center font-bold">{{ error_msg
+        }}
+    </div>
+    {% else %}
+    <div class="p-10 text-center text-gray-400 bg-white rounded-xl border border-dashed border-gray-300">
+        <i class="fa-solid fa-chart-simple text-4xl mb-3 opacity-20"></i>
+        <p>Không có dữ liệu hiển thị.</p>
+    </div>
+    {% endif %}
     {% else %}
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -59,7 +70,9 @@
             <h3 class="font-bold text-gray-800 mb-4 flex items-center">
                 <i class="fa-solid fa-chart-column mr-2 text-blue-500"></i> Biểu đồ trực quan
             </h3>
-            <div class="relative h-80 w-full"><canvas id="reportChart"></canvas></div>
+            <div class="relative h-80 w-full">
+                <canvas id="reportChart"></canvas>
+            </div>
         </div>
 
         <div class="flex flex-col gap-6">
@@ -88,24 +101,25 @@
                 <div class="overflow-y-auto h-[300px]">
                     <table class="w-full text-sm text-left">
                         <thead class="text-xs text-gray-500 uppercase bg-gray-50 sticky top-0">
-                            <tr>
-                                <th class="px-4 py-2">
-                                    {% if filter.type in ['revenue', 'reception'] %}Ngày{% else %}Tên{% endif %}
-                                </th>
-                                <th class="px-4 py-2 text-right">Giá trị</th>
-                            </tr>
+                        <tr>
+                            <th class="px-4 py-2">
+                                {% if filter.type in ['revenue', 'reception'] %}Ngày{% else %}Tên{% endif %}
+                            </th>
+                            <th class="px-4 py-2 text-right">Giá trị</th>
+                        </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            {% for item in report_data.data %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-2 font-medium text-gray-800 truncate max-w-[150px]" title="{{ item.label }}">
-                                    {{ item.label }}
-                                </td>
-                                <td class="px-4 py-2 text-right font-bold text-blue-600">
-                                    {{ "{:,.0f}".format(item.value) }}
-                                </td>
-                            </tr>
-                            {% endfor %}
+                        {% for item in report_data.data %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2 font-medium text-gray-800 truncate max-w-[150px]"
+                                title="{{ item.label }}">
+                                {{ item.label }}
+                            </td>
+                            <td class="px-4 py-2 text-right font-bold text-blue-600">
+                                {{ "{:,.0f}".format(item.value) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>

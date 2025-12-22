@@ -26,127 +26,133 @@
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    <!-- 1. SIDEBAR (MENU TRÁI) -->
-    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20 hidden md:flex">
-        <div class="h-16 flex items-center px-6 border-b border-slate-700">
-            <i class="fa-solid fa-car-wrench text-blue-500 text-2xl mr-3"></i>
-            <span class="text-xl font-bold tracking-wide">GARA PRO</span>
-        </div>
+<!-- 1. SIDEBAR (MENU TRÁI) -->
+<aside class="w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20 hidden md:flex">
+    <div class="h-16 flex items-center px-6 border-b border-slate-700">
+        <i class="fa-solid fa-car-wrench text-blue-500 text-2xl mr-3"></i>
+        <span class="text-xl font-bold tracking-wide">GARA PRO</span>
+    </div>
 
-        <nav class="flex-1 py-4 space-y-1 overflow-y-auto">
-            <!-- Trang chủ (Ai cũng thấy) -->
-            <a href="/" class="sidebar-item {{ 'active' if request.endpoint == 'main.index' }} flex items-center px-6 py-3 text-sm font-medium">
-                <i class="fa-solid fa-house w-6 text-center mr-2"></i>
-                <span>Trang chủ</span>
-            </a>
+    <nav class="flex-1 py-4 space-y-1 overflow-y-auto">
+        <!-- Trang chủ (Ai cũng thấy) -->
+        <a href="/"
+           class="sidebar-item {{ 'active' if request.endpoint == 'main.index' }} flex items-center px-6 py-3 text-sm font-medium">
+            <i class="fa-solid fa-house w-6 text-center mr-2"></i>
+            <span>Trang chủ</span>
+        </a>
 
-            <!-- Menu Phân Quyền -->
-            {% if current_user.is_authenticated %}
-
-                {# Debug: In ra role để kiểm tra nếu menu không hiện (Xóa sau khi xong) #}
-                <!-- Role hiện tại: {{ current_user.vai_tro.name }} -->
-
-                <!-- 1. Tiếp nhận (Admin + Tiếp nhận) -->
-                {% if current_user.vai_tro.name == 'TIEP_NHAN' or current_user.vai_tro.name == 'ADMIN' %}
-                <a href="/reception" class="sidebar-item {{ 'active' if request.endpoint == 'main.reception' }} flex items-center px-6 py-3 text-sm font-medium">
-                    <i class="fa-solid fa-file-pen w-6 text-center mr-2"></i>
-                    <span>Tiếp nhận xe</span>
-                </a>
-                {% endif %}
-
-                <!-- 2. Kỹ thuật (Admin + Kỹ thuật) -->
-                {% if current_user.vai_tro.name == 'KY_THUAT' or current_user.vai_tro.name == 'ADMIN' %}
-                <a href="/reception" class="sidebar-item {{ 'active' if request.endpoint == 'main.repair' }} flex items-center px-6 py-3 text-sm font-medium">
-                    <i class="fa-solid fa-screwdriver-wrench w-6 text-center mr-2"></i>
-                    <span>Sửa chữa</span>
-                </a>
-                {% endif %}
-
-                <!-- 3. Thu ngân (Admin + Thu ngân) -->
-                {% if current_user.vai_tro.name == 'THU_NGAN' or current_user.vai_tro.name == 'ADMIN' %}
-                <a href="/payment" class="sidebar-item {{ 'active' if request.endpoint == 'main.payment' }} flex items-center px-6 py-3 text-sm font-medium">
-                    <i class="fa-solid fa-money-bill-wave w-6 text-center mr-2"></i>
-                    <span>Thanh toán</span>
-                </a>
-                {% endif %}
-
-                <!-- 4. Admin -->
-                {% if current_user.vai_tro.name == 'ADMIN' %}
-                <div class="px-6 pt-4 pb-2 text-xs text-gray-500 uppercase font-bold tracking-wider">Quản lý</div>
-                <a href="/report" class="sidebar-item {{ 'active' if request.endpoint == 'main.report' }} flex items-center px-6 py-3 text-sm font-medium">
-                    <i class="fa-solid fa-chart-pie w-6 text-center mr-2"></i>
-                    <span>Báo cáo</span>
-                </a>
-                <a href="/admin" class="sidebar-item flex items-center px-6 py-3 text-sm font-medium">
-                    <i class="fa-solid fa-gears w-6 text-center mr-2"></i>
-                    <span>Cấu hình</span>
-                </a>
-                {% endif %}
-            {% endif %}
-        </nav>
-
-        <!-- User Profile -->
+        <!-- Menu Phân Quyền -->
         {% if current_user.is_authenticated %}
-        <div class="border-t border-slate-700 p-4 bg-slate-800 cursor-pointer hover:bg-slate-700 transition">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center overflow-hidden">
-                    <div class="h-9 w-9 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center font-bold text-sm text-white">
-                        {{ current_user.ten[0] | upper }}
-                    </div>
-                    <div class="ml-3 overflow-hidden">
-                        <p class="text-sm font-medium truncate w-24 text-white">{{ current_user.ten }}</p>
-                        <p class="text-xs text-gray-400">{{ current_user.vai_tro.name }}</p>
-                    </div>
+
+        {# Debug: In ra role để kiểm tra nếu menu không hiện (Xóa sau khi xong) #}
+        <!-- Role hiện tại: {{ current_user.vai_tro.name }} -->
+
+        <!-- 1. Tiếp nhận (Admin + Tiếp nhận) -->
+        {% if current_user.vai_tro.name == 'TIEP_NHAN' or current_user.vai_tro.name == 'ADMIN' %}
+        <a href="/reception"
+           class="sidebar-item {{ 'active' if request.endpoint == 'main.reception' }} flex items-center px-6 py-3 text-sm font-medium">
+            <i class="fa-solid fa-file-pen w-6 text-center mr-2"></i>
+            <span>Tiếp nhận xe</span>
+        </a>
+        {% endif %}
+
+        <!-- 2. Kỹ thuật (Admin + Kỹ thuật) -->
+        {% if current_user.vai_tro.name == 'KY_THUAT' or current_user.vai_tro.name == 'ADMIN' %}
+        <a href="/technician/dashboard"
+           class="sidebar-item {{ 'active' if request.endpoint in ['main.tech_dashboard', 'main.repair'] }} flex items-center px-6 py-3 text-sm font-medium">
+            <i class="fa-solid fa-screwdriver-wrench w-6 text-center mr-2"></i>
+            <span>Sửa chữa</span>
+        </a>
+        {% endif %}
+
+        <!-- 3. Thu ngân (Admin + Thu ngân) -->
+        {% if current_user.vai_tro.name == 'THU_NGAN' or current_user.vai_tro.name == 'ADMIN' %}
+        <a href="/payment"
+           class="sidebar-item {{ 'active' if request.endpoint == 'main.payment' }} flex items-center px-6 py-3 text-sm font-medium">
+            <i class="fa-solid fa-money-bill-wave w-6 text-center mr-2"></i>
+            <span>Thanh toán</span>
+        </a>
+        {% endif %}
+
+        <!-- 4. Admin -->
+        {% if current_user.vai_tro.name == 'ADMIN' %}
+        <div class="px-6 pt-4 pb-2 text-xs text-gray-500 uppercase font-bold tracking-wider">Quản lý</div>
+        <a href="/report"
+           class="sidebar-item {{ 'active' if request.endpoint == 'main.report' }} flex items-center px-6 py-3 text-sm font-medium">
+            <i class="fa-solid fa-chart-pie w-6 text-center mr-2"></i>
+            <span>Báo cáo</span>
+        </a>
+        <a href="/admin" class="sidebar-item flex items-center px-6 py-3 text-sm font-medium">
+            <i class="fa-solid fa-gears w-6 text-center mr-2"></i>
+            <span>Cấu hình</span>
+        </a>
+        {% endif %}
+        {% endif %}
+    </nav>
+
+    <!-- User Profile -->
+    {% if current_user.is_authenticated %}
+    <div class="border-t border-slate-700 p-4 bg-slate-800 cursor-pointer hover:bg-slate-700 transition">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center overflow-hidden">
+                <div class="h-9 w-9 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center font-bold text-sm text-white">
+                    {{ current_user.ten[0] | upper }}
                 </div>
-                <a href="/logout" class="text-gray-400 hover:text-red-400 transition" title="Đăng xuất">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </a>
+                <div class="ml-3 overflow-hidden">
+                    <p class="text-sm font-medium truncate w-24 text-white">{{ current_user.ten }}</p>
+                    <p class="text-xs text-gray-400">{{ current_user.vai_tro.name }}</p>
+                </div>
+            </div>
+            <a href="/logout" class="text-gray-400 hover:text-red-400 transition" title="Đăng xuất">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="p-4 bg-slate-800 border-t border-slate-700">
+        <a href="/login"
+           class="flex items-center justify-center text-sm font-bold text-blue-400 hover:text-blue-300 w-full">
+            <i class="fa-solid fa-right-to-bracket mr-2"></i> Đăng nhập
+        </a>
+    </div>
+    {% endif %}
+</aside>
+
+<!-- 2. MAIN CONTENT -->
+<div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+    <!-- Top Header -->
+    <header class="h-16 bg-white shadow-sm flex items-center justify-between px-6 z-10">
+        <button class="md:hidden text-gray-500 hover:text-blue-600">
+            <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+        <div class="font-bold text-gray-700 text-lg">
+            HỆ THỐNG QUẢN LÝ DỊCH VỤ Ô TÔ
+        </div>
+        <div class="flex items-center space-x-5 ml-4">
+            <div class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                <i class="fa-regular fa-calendar mr-2"></i> {{ today_date if today_date else "Hôm nay" }}
             </div>
         </div>
-        {% else %}
-        <div class="p-4 bg-slate-800 border-t border-slate-700">
-            <a href="/login" class="flex items-center justify-center text-sm font-bold text-blue-400 hover:text-blue-300 w-full">
-                <i class="fa-solid fa-right-to-bracket mr-2"></i> Đăng nhập
-            </a>
+    </header>
+
+    <!-- Body -->
+    <main class="flex-1 overflow-y-auto p-6 scroll-smooth">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-6 space-y-2 fade-in">
+            {% for category, message in messages %}
+            <div class="p-4 rounded-lg flex items-center shadow-sm border-l-4 {{ 'bg-red-50 text-red-700 border-red-500' if category == 'danger' else 'bg-green-50 text-green-700 border-green-500' if category == 'success' else 'bg-yellow-50 text-yellow-700 border-yellow-500' }}">
+                <i class="fa-solid {{ 'fa-circle-xmark' if category == 'danger' else 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }} mr-3 text-lg"></i>
+                <span class="font-medium">{{ message }}</span>
+            </div>
+            {% endfor %}
         </div>
         {% endif %}
-    </aside>
+        {% endwith %}
 
-    <!-- 2. MAIN CONTENT -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
-        <!-- Top Header -->
-        <header class="h-16 bg-white shadow-sm flex items-center justify-between px-6 z-10">
-            <button class="md:hidden text-gray-500 hover:text-blue-600">
-                <i class="fa-solid fa-bars text-xl"></i>
-            </button>
-            <div class="font-bold text-gray-700 text-lg">
-                HỆ THỐNG QUẢN LÝ DỊCH VỤ Ô TÔ
-            </div>
-            <div class="flex items-center space-x-5 ml-4">
-                <div class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    <i class="fa-regular fa-calendar mr-2"></i> {{ today_date if today_date else "Hôm nay" }}
-                </div>
-            </div>
-        </header>
-
-        <!-- Body -->
-        <main class="flex-1 overflow-y-auto p-6 scroll-smooth">
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="mb-6 space-y-2 fade-in">
-                        {% for category, message in messages %}
-                            <div class="p-4 rounded-lg flex items-center shadow-sm border-l-4 {{ 'bg-red-50 text-red-700 border-red-500' if category == 'danger' else 'bg-green-50 text-green-700 border-green-500' if category == 'success' else 'bg-yellow-50 text-yellow-700 border-yellow-500' }}">
-                                <i class="fa-solid {{ 'fa-circle-xmark' if category == 'danger' else 'fa-circle-check' if category == 'success' else 'fa-circle-exclamation' }} mr-3 text-lg"></i>
-                                <span class="font-medium">{{ message }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-
-            {% block content %}{% endblock %}
-        </main>
-    </div>
+        {% block content %}{% endblock %}
+    </main>
+</div>
 </body>
 </html>

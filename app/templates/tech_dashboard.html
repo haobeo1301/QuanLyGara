@@ -8,7 +8,8 @@
         <!-- Welcome Section -->
         <div class="lg:col-span-3">
             <h2 class="text-2xl font-bold text-gray-800">Khu vực Kỹ thuật</h2>
-            <p class="text-gray-500 text-sm mt-1">Xin chào <strong>{{ current_user.ten }}</strong>, danh sách dưới đây là các xe đang chờ bạn xử lý.</p>
+            <p class="text-gray-500 text-sm mt-1">Xin chào <strong>{{ current_user.ten }}</strong>, danh sách dưới đây
+                là các xe đang chờ bạn xử lý.</p>
         </div>
 
         <!-- Stat Card -->
@@ -46,77 +47,78 @@
         <div class="overflow-x-auto flex-1">
             <table class="w-full text-sm text-left text-gray-600" id="techTable">
                 <thead class="text-xs text-gray-500 uppercase bg-gray-100 border-b border-gray-200">
-                    <tr>
-                        <th scope="col" class="px-6 py-4 font-semibold">Thông tin xe</th>
-                        <th scope="col" class="px-6 py-4 font-semibold">Yêu cầu / Tình trạng</th>
-                        <th scope="col" class="px-6 py-4 font-semibold">Thời gian nhận</th>
-                        <th scope="col" class="px-6 py-4 font-semibold text-center">Hành động</th>
-                    </tr>
+                <tr>
+                    <th scope="col" class="px-6 py-4 font-semibold">Thông tin xe</th>
+                    <th scope="col" class="px-6 py-4 font-semibold">Yêu cầu / Tình trạng</th>
+                    <th scope="col" class="px-6 py-4 font-semibold">Thời gian nhận</th>
+                    <th scope="col" class="px-6 py-4 font-semibold text-center">Hành động</th>
+                </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    {% for t in tickets %}
-                    <tr class="hover:bg-blue-50 transition group">
-                        <!-- Cột Thông tin xe -->
-                        <td class="px-6 py-4">
-                            <div class="flex items-start">
-                                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3">
-                                    <i class="fa-solid fa-car"></i>
+                {% for t in tickets %}
+                <tr class="hover:bg-blue-50 transition group">
+                    <!-- Cột Thông tin xe -->
+                    <td class="px-6 py-4">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3">
+                                <i class="fa-solid fa-car"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900 text-base mb-1 bg-yellow-300 bg-opacity-20 border border-yellow-400 text-yellow-800 px-2 py-0.5 rounded inline-block">
+                                    {{ t.xe.bien_so }}
                                 </div>
-                                <div>
-                                    <div class="font-bold text-gray-900 text-base mb-1 bg-yellow-300 bg-opacity-20 border border-yellow-400 text-yellow-800 px-2 py-0.5 rounded inline-block">
-                                        {{ t.xe.bien_so }}
-                                    </div>
-                                    <div class="text-xs text-gray-500 mt-1">
-                                        <i class="fa-solid fa-user mr-1"></i> {{ t.xe.khach_hang.ten }}
-                                    </div>
-                                    <div class="text-xs text-gray-400">
-                                        {{ t.xe.hieu_xe }}
-                                    </div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <i class="fa-solid fa-user mr-1"></i> {{ t.xe.khach_hang.ten }}
+                                </div>
+                                <div class="text-xs text-gray-400">
+                                    {{ t.xe.hieu_xe }}
                                 </div>
                             </div>
-                        </td>
+                        </div>
+                    </td>
 
-                        <!-- Cột Mô tả lỗi -->
-                        <td class="px-6 py-4">
-                            <div class="bg-gray-50 border border-gray-200 rounded p-2 text-gray-700 italic max-w-sm line-clamp-2 group-hover:bg-white transition">
-                                "{{ t.tinh_trang }}"
-                            </div>
-                        </td>
+                    <!-- Cột Mô tả lỗi -->
+                    <td class="px-6 py-4">
+                        <div class="bg-gray-50 border border-gray-200 rounded p-2 text-gray-700 italic max-w-sm line-clamp-2 group-hover:bg-white transition">
+                            "{{ t.tinh_trang }}"
+                        </div>
+                    </td>
 
-                        <!-- Cột Thời gian -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center text-gray-500">
-                                <i class="fa-regular fa-clock mr-2"></i>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">{{ t.ngay_tiep_nhan.strftime('%H:%M') }}</p>
-                                    <p class="text-xs">{{ t.ngay_tiep_nhan.strftime('%d/%m/%Y') }}</p>
-                                </div>
+                    <!-- Cột Thời gian -->
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fa-regular fa-clock mr-2"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ t.ngay_tiep_nhan.strftime('%H:%M')
+                                    }}</p>
+                                <p class="text-xs">{{ t.ngay_tiep_nhan.strftime('%d/%m/%Y') }}</p>
                             </div>
-                        </td>
+                        </div>
+                    </td>
 
-                        <!-- Cột Tác vụ -->
-                        <td class="px-6 py-4 text-center">
-                            <!-- ĐÃ SỬA LỖI LINK Ở ĐÂY: Dùng ?id= thay vì /id -->
-                            <a href="/repair?id={{ t.id }}"
-                               class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm hover:shadow-md transition-all transform active:scale-95">
-                                <i class="fa-solid fa-screwdriver-wrench mr-2"></i> Tiếp nhận
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <!-- Empty State -->
-                    <tr>
-                        <td colspan="4" class="px-6 py-20 text-center">
-                            <div class="flex flex-col items-center justify-center text-gray-400">
-                                <div class="bg-gray-100 p-4 rounded-full mb-3">
-                                    <i class="fa-solid fa-check-double text-4xl text-green-500"></i>
-                                </div>
-                                <h3 class="text-lg font-medium text-gray-600">Tuyệt vời!</h3>
-                                <p class="text-sm">Hiện tại không có xe nào đang chờ sửa chữa.</p>
+                    <!-- Cột Tác vụ -->
+                    <td class="px-6 py-4 text-center">
+                        <!-- ĐÃ SỬA LỖI LINK Ở ĐÂY: Dùng ?id= thay vì /id -->
+                        <a href="/repair?id={{ t.id }}"
+                           class="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm hover:shadow-md transition-all transform active:scale-95">
+                            <i class="fa-solid fa-screwdriver-wrench mr-2"></i> Tiếp nhận
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <!-- Empty State -->
+                <tr>
+                    <td colspan="4" class="px-6 py-20 text-center">
+                        <div class="flex flex-col items-center justify-center text-gray-400">
+                            <div class="bg-gray-100 p-4 rounded-full mb-3">
+                                <i class="fa-solid fa-check-double text-4xl text-green-500"></i>
                             </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                            <h3 class="text-lg font-medium text-gray-600">Tuyệt vời!</h3>
+                            <p class="text-sm">Hiện tại không có xe nào đang chờ sửa chữa.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
                 </tbody>
             </table>
 
