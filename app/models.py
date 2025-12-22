@@ -5,7 +5,6 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
 
-# --- ENUM ---
 class UserRole(enum.Enum):
     ADMIN = 1
     TIEP_NHAN = 2
@@ -17,14 +16,16 @@ class TrangThaiPhieu(enum.Enum):
     DANG_SUA = "Đang sửa"
     DA_THANH_TOAN = "Đã thanh toán"
 
-# --- BẢNG HIỆU XE (Dùng để Validate Hãng) ---
+class TrangThaiPhieuSua(enum.Enum):
+    NHAP = "Nháp"
+    HOAN_THANH = "Hoàn thành"
+
 class HieuXe(db.Model):
     __tablename__ = 'hieu_xe'
     id = db.Column(Integer, primary_key=True, autoincrement=True)
     ten_hieu_xe = db.Column(String(50), nullable=False, unique=True)
     def __str__(self): return self.ten_hieu_xe
 
-# --- CÁC BẢNG KHÁC (SNAKE_CASE) ---
 class NguoiDung(db.Model, UserMixin):
     __tablename__ = 'nguoi_dung'
     id = db.Column(Integer, primary_key=True, autoincrement=True)
@@ -50,7 +51,7 @@ class Xe(db.Model):
     __tablename__ = 'xe'
     id = db.Column(Integer, primary_key=True, autoincrement=True)
     bien_so = db.Column(String(20), nullable=False)
-    hieu_xe = db.Column(String(50))
+    hieu_xe = db.Column(String(50)) 
     khach_hang_id = db.Column(Integer, ForeignKey('khach_hang.id'), nullable=False)
     phieu_tiep_nhan = relationship('PhieuTiepNhan', backref='xe', lazy=True)
     __table_args__ = (UniqueConstraint('bien_so', name='uq_xe_bienso'),)
@@ -87,6 +88,7 @@ class PhieuSuaChua(db.Model):
     id = db.Column(Integer, primary_key=True, autoincrement=True)
     ngay_sua = db.Column(DateTime, default=datetime.now)
     tien_cong = db.Column(Float, default=0)
+    trang_thai_phieu = db.Column(Enum(TrangThaiPhieuSua), default=TrangThaiPhieuSua.HOAN_THANH)
     phieu_tiep_nhan_id = db.Column(Integer, ForeignKey('phieu_tiep_nhan.id'), unique=True, nullable=False)
     nguoi_dung_id = db.Column(Integer, ForeignKey('nguoi_dung.id'), nullable=False)
     chi_tiet = relationship('ChiTietPhieuSua', backref='phieu_sua_chua', lazy=True)

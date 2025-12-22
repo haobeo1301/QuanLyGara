@@ -1,16 +1,18 @@
 {% extends "layout.html" %}
 {% block content %}
 <h2>Báo cáo doanh thu</h2>
-<form class="row g-3 mb-4">
-    <div class="col-auto"><input type="number" name="month" class="form-control" value="{{ m }}"></div>
-    <div class="col-auto"><input type="number" name="year" class="form-control" value="{{ y }}"></div>
-    <div class="col-auto"><button class="btn btn-primary">Xem</button></div>
+<form class="row g-3 mb-4 border p-3 rounded bg-white shadow-sm">
+    <div class="col-auto"><input type="number" name="month" class="form-control" value="{{ m }}" placeholder="Tháng"></div>
+    <div class="col-auto"><input type="number" name="year" class="form-control" value="{{ y }}" placeholder="Năm"></div>
+    <div class="col-auto"><button class="btn btn-primary">Xem báo cáo</button></div>
 </form>
-<canvas id="chart"></canvas>
+<div class="card shadow p-4">
+    <canvas id="chart"></canvas>
+</div>
 <script>
     new Chart(document.getElementById('chart'), {
         type: 'bar',
-        data: { labels: {{ labels | tojson }}, datasets: [{label:'Doanh thu', data: {{ values | tojson }}, backgroundColor:'blue'}] }
+        data: { labels: {{ labels | tojson }}, datasets: [{label:'Doanh thu (VNĐ)', data: {{ values | tojson }}, backgroundColor:'#0d6efd'}] }
     });
 </script>
 {% endblock %}

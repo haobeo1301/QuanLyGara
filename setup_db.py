@@ -11,7 +11,7 @@ app = create_app()
 def init_database():
     with app.app_context():
         # 1. Xóa hết bảng cũ (nếu muốn làm sạch - cẩn thận khi dùng)
-        # db.drop_all()
+        db.drop_all()
 
         # 2. Tạo lại tất cả các bảng
         print("Đang tạo bảng trong CSDL suaxedb...")

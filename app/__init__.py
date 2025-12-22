@@ -1,10 +1,10 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, AnonymousUserMixin
+from flask_login import LoginManager
 from app.config import Config
 
 
-# --- VÁ LỖI WTFORMS 3.x ---
+# Vá lỗi WTForms vs Flask-Admin
 def fix_wtforms_conflict():
     try:
         from wtforms.widgets import Select
@@ -29,7 +29,7 @@ def fix_wtforms_conflict():
             return _original_call(self, field, **kwargs)
 
         Select.__call__ = _patched_call
-        print(">>> FIXED WTFORMS <<<")
+        print(">>> FIXED WTFORMS COMPATIBILITY <<<")
     except:
         pass
 
@@ -40,12 +40,6 @@ db = SQLAlchemy()
 login = LoginManager()
 
 
-# --- CLASS NGƯỜI DÙNG ẨN DANH (FIX LỖI UndefinedError) ---
-class Anonymous(AnonymousUserMixin):
-    def __init__(self):
-        self.vai_tro = None  # Mặc định không có vai trò
-
-
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -53,10 +47,8 @@ def create_app():
     db.init_app(app)
     login.init_app(app)
 
-    # Cấu hình Login
     login.login_view = 'main.login_view'
     login.login_message = "Vui lòng đăng nhập."
-    login.anonymous_user = Anonymous  # Áp dụng class ẩn danh
 
     from app import admin
     admin.init_admin(app, db)
