@@ -1,18 +1,163 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2>Báo cáo doanh thu</h2>
-<form class="row g-3 mb-4 border p-3 rounded bg-white shadow-sm">
-    <div class="col-auto"><input type="number" name="month" class="form-control" value="{{ m }}" placeholder="Tháng"></div>
-    <div class="col-auto"><input type="number" name="year" class="form-control" value="{{ y }}" placeholder="Năm"></div>
-    <div class="col-auto"><button class="btn btn-primary">Xem báo cáo</button></div>
-</form>
-<div class="card shadow p-4">
-    <canvas id="chart"></canvas>
+<div class="fade-in">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fa-solid fa-chart-pie mr-3 text-blue-600"></i>Báo cáo Thống kê
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">Hệ thống báo cáo toàn diện Gara.</p>
+        </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 mb-6">
+        <form action="/report" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Loại thống kê</label>
+                <select name="type" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-blue-500 font-medium">
+                    <option value="revenue" {{ 'selected' if filter.type == 'revenue' }}>💰 Doanh thu</option>
+                    <option value="reception" {{ 'selected' if filter.type == 'reception' }}>🚗 Số lượng xe vào</option>
+                    <option value="parts" {{ 'selected' if filter.type == 'parts' }}>⚙️ Linh kiện bán chạy</option>
+                    <option value="issues" {{ 'selected' if filter.type == 'issues' }}>⚠️ Top lỗi hư hỏng</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Từ ngày</label>
+                <input type="date" name="from_date" value="{{ filter.from }}" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Đến ngày</label>
+                <input type="date" name="to_date" value="{{ filter.to }}" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-magnifying-glass mr-1"></i> Xem
+                </button>
+                {% if report_data.data %}
+                <a href="{{ url_for('main.export_report', type=filter.type, from_date=filter.from, to_date=filter.to) }}"
+                   class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-sm" title="Xuất CSV">
+                    <i class="fa-solid fa-download"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    {% if not report_data.data %}
+         {% if error_msg %}
+            <div class="p-4 mb-4 text-red-700 bg-red-100 rounded-lg border border-red-300 text-center font-bold">{{ error_msg }}</div>
+         {% else %}
+            <div class="p-10 text-center text-gray-400 bg-white rounded-xl border border-dashed border-gray-300">
+                <i class="fa-solid fa-chart-simple text-4xl mb-3 opacity-20"></i>
+                <p>Không có dữ liệu hiển thị.</p>
+            </div>
+         {% endif %}
+    {% else %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fa-solid fa-chart-column mr-2 text-blue-500"></i> Biểu đồ trực quan
+            </h3>
+            <div class="relative h-80 w-full"><canvas id="reportChart"></canvas></div>
+        </div>
+
+        <div class="flex flex-col gap-6">
+            <div class="bg-gradient-to-br from-indigo-600 to-blue-500 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">
+                        {% if filter.type == 'revenue' %}TỔNG DOANH THU{% endif %}
+                        {% if filter.type == 'reception' %}TỔNG XE TIẾP NHẬN{% endif %}
+                        {% if filter.type == 'parts' %}TỔNG LINH KIỆN ĐÃ BÁN{% endif %}
+                        {% if filter.type == 'issues' %}TỔNG LỖI GHI NHẬN{% endif %}
+                    </p>
+                    <h3 class="text-3xl font-bold">
+                        {{ "{:,.0f}".format(report_data.summary.total) }}
+                        <span class="text-lg font-normal opacity-80">
+                            {% if filter.type == 'revenue' %}đ{% else %}lượt{% endif %}
+                        </span>
+                    </h3>
+                </div>
+                <i class="fa-solid fa-coins absolute right-[-10px] bottom-[-10px] text-9xl opacity-10"></i>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 overflow-hidden flex flex-col">
+                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 font-bold text-gray-700 text-sm">
+                    Chi tiết dữ liệu
+                </div>
+                <div class="overflow-y-auto h-[300px]">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-gray-500 uppercase bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2">
+                                    {% if filter.type in ['revenue', 'reception'] %}Ngày{% else %}Tên{% endif %}
+                                </th>
+                                <th class="px-4 py-2 text-right">Giá trị</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for item in report_data.data %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 font-medium text-gray-800 truncate max-w-[150px]" title="{{ item.label }}">
+                                    {{ item.label }}
+                                </td>
+                                <td class="px-4 py-2 text-right font-bold text-blue-600">
+                                    {{ "{:,.0f}".format(item.value) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+{% if report_data.data %}
 <script>
-    new Chart(document.getElementById('chart'), {
-        type: 'bar',
-        data: { labels: {{ labels | tojson }}, datasets: [{label:'Doanh thu (VNĐ)', data: {{ values | tojson }}, backgroundColor:'#0d6efd'}] }
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('reportChart').getContext('2d');
+        const rawData = {{ report_data.data | tojson }};
+        const labels = rawData.map(i => i.label);
+        const values = rawData.map(i => i.value);
+        const type = '{{ filter.type }}';
+
+        let labelStr = 'Giá trị';
+        let color = '#3b82f6';
+
+        if(type === 'revenue') { labelStr = 'Doanh thu (VNĐ)'; color = '#2563eb'; }
+        else if(type === 'reception') { labelStr = 'Số lượng xe'; color = '#10b981'; }
+        else if(type === 'parts') { labelStr = 'Số lượng bán'; color = '#f59e0b'; }
+        else if(type === 'issues') { labelStr = 'Số lần gặp'; color = '#ef4444'; }
+
+        // Nếu là thống kê top (Linh kiện/Lỗi), đổi sang biểu đồ ngang cho dễ đọc tên
+        const chartType = (type === 'parts' || type === 'issues') ? 'bar' : 'bar';
+        const indexAxis = (type === 'parts' || type === 'issues') ? 'y' : 'x';
+
+        new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: labelStr,
+                    data: values,
+                    backgroundColor: color,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: indexAxis, // Xoay ngang nếu là Top list
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true }
+                }
+            }
+        });
     });
 </script>
+{% endif %}
 {% endblock %}

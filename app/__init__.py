@@ -29,7 +29,7 @@ def fix_wtforms_conflict():
             return _original_call(self, field, **kwargs)
 
         Select.__call__ = _patched_call
-        print(">>> FIXED WTFORMS COMPATIBILITY <<<")
+        # Đã xóa dòng print để console gọn gàng hơn
     except:
         pass
 

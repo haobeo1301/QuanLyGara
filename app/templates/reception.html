@@ -1,25 +1,22 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="fade-in">
-    <!-- Tiêu đề & Counter -->
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold text-gray-800 flex items-center">
             <i class="fa-solid fa-file-pen mr-3 text-blue-600"></i>Tiếp nhận xe mới
         </h2>
         <div class="flex items-center space-x-3">
             <div class="text-sm bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
-                <span class="text-gray-500">Giới hạn ngày:</span> 
+                <span class="text-gray-500">Giới hạn ngày:</span>
                 <span class="font-bold {{ 'text-red-600' if tickets|length >= 30 else 'text-blue-600' }} text-lg ml-1">{{ tickets|length }}/30</span>
             </div>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- CỘT TRÁI: FORM NHẬP LIỆU -->
+
         <div class="lg:col-span-1 space-y-6">
-            
-            <!-- Xử lý lỗi Database (Retry/Cancel) -->
+
             {% if db_error %}
             <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm animate-pulse">
                 <div class="flex">
@@ -42,20 +39,19 @@
                 <p class="text-sm text-amber-700">Hôm nay gara đã nhận đủ số lượng xe quy định.</p>
             </div>
             {% else %}
-            
+
             <form method="post" id="receptionForm" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="p-5 border-b border-gray-100 bg-gray-50">
                     <h3 class="font-bold text-gray-800"><i class="fa-solid fa-pen-to-square mr-2 text-blue-500"></i>Thông tin phiếu</h3>
                 </div>
-                
+
                 <div class="p-5 space-y-4">
-                    <!-- Biển số -->
                     <div>
                         <label class="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wide">Biển số xe <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            <input type="text" name="plate" id="plate" 
-                                   class="w-full bg-gray-50 border {{ 'border-red-500 bg-red-50' if errors and errors.plate else 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 font-bold uppercase" 
-                                   placeholder="VD: 59X1-12345" 
+                            <input type="text" name="plate" id="plate"
+                                   class="w-full bg-gray-50 border {{ 'border-red-500 bg-red-50' if errors and errors.plate else 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 font-bold uppercase"
+                                   placeholder="VD: 59X1-12345"
                                    value="{{ form_data.plate if form_data else '' }}" required onblur="checkPlate()">
                             <p id="plate-msg" class="mt-1 text-xs h-4"></p>
                             {% if errors and errors.plate %}
@@ -64,12 +60,11 @@
                         </div>
                     </div>
 
-                    <!-- Hiệu xe -->
                     <div>
                         <label class="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wide">Hãng xe <span class="text-red-500">*</span></label>
-                        <input type="text" name="brand" id="brand" 
-                               class="w-full bg-gray-50 border {{ 'border-red-500 bg-red-50' if errors and errors.brand else 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" 
-                               placeholder="Chọn hãng..." list="brandList" 
+                        <input type="text" name="brand" id="brand"
+                               class="w-full bg-gray-50 border {{ 'border-red-500 bg-red-50' if errors and errors.brand else 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
+                               placeholder="Chọn hãng..." list="brandList"
                                value="{{ form_data.brand if form_data else '' }}">
                         <datalist id="brandList">
                             {% for b in valid_brands %}<option value="{{ b }}">{% endfor %}
@@ -81,12 +76,11 @@
 
                     <div class="border-t border-gray-100 my-2"></div>
 
-                    <!-- Số điện thoại -->
                     <div>
                         <label class="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wide">Số điện thoại <span class="text-red-500">*</span></label>
-                        <input type="text" name="phone" id="phone" 
-                               class="w-full bg-gray-50 border {{ 'border-red-500 bg-red-50' if errors and errors.phone else 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" 
-                               placeholder="10 chữ số (0...)" 
+                        <input type="text" name="phone" id="phone"
+                               class="w-full bg-gray-50 border {{ 'border-red-500 bg-red-50' if errors and errors.phone else 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
+                               placeholder="10 chữ số (0...)"
                                value="{{ form_data.phone if form_data else '' }}" required onblur="checkPhone()">
                         <p id="phone-msg" class="mt-1 text-xs h-4"></p>
                         {% if errors and errors.phone %}
@@ -94,31 +88,59 @@
                         {% endif %}
                     </div>
 
-                    <!-- Tên khách -->
                     <div>
                         <label class="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wide">Tên khách hàng <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" id="name" 
-                               class="w-full bg-gray-50 border {{ 'border-red-500 bg-red-50' if errors and errors.name else 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 font-medium" 
+                        <input type="text" name="name" id="name"
+                               class="w-full bg-gray-50 border {{ 'border-red-500 bg-red-50' if errors and errors.name else 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 font-medium"
                                value="{{ form_data.name if form_data else '' }}" required>
                         {% if errors and errors.name %}
                             <p class="mt-1 text-xs text-red-600 font-bold mt-1">{{ errors.name }}</p>
                         {% endif %}
                     </div>
 
-                    <!-- Địa chỉ -->
                     <div>
                         <label class="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wide">Địa chỉ</label>
-                        <input type="text" name="address" id="address" 
-                               class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" 
+                        <input type="text" name="address" id="address"
+                               class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
                                value="{{ form_data.address if form_data else '' }}">
                     </div>
 
-                    <!-- Yêu cầu -->
                     <div>
-                        <label class="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wide">Mô tả lỗi / Yêu cầu</label>
-                        <textarea name="issue" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 h-24 resize-none" 
-                                  placeholder="VD: Xe không nổ máy, thay nhớt..." required>{{ form_data.issue if form_data else '' }}</textarea>
+                        <label class="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                            <i class="fa-solid fa-screwdriver-wrench mr-1"></i> Loại dịch vụ / Mô tả lỗi <span class="text-red-500">*</span>
+                        </label>
+
+                        <input type="text" name="issue" list="commonIssues" required
+                               class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
+                               placeholder="Chọn hoặc nhập lỗi..."
+                               value="{{ form_data.issue if form_data else '' }}">
+
+                        <datalist id="commonIssues">
+                            <option value="Bảo dưỡng định kỳ">
+                            <option value="Thay nhớt & Lọc">
+                            <option value="Vệ sinh khoang máy">
+
+                            <option value="Hệ thống Phanh (Thắng)">
+                            <option value="Hệ thống Gầm & Phuộc">
+                            <option value="Cân bằng động & Lốp xe">
+
+                            <option value="Động cơ & Máy">
+                            <option value="Hệ thống Điện & Đèn">
+                            <option value="Hệ thống Lạnh (Điều hòa)">
+                            <option value="Bình ắc quy">
+
+                            <option value="Đồng sơn & Vết xước">
+                            <option value="Thay thế phụ tùng thân vỏ">
+
+                            <option value="Đăng kiểm & Giấy tờ">
+                            <option value="Cứu hộ & Kéo xe">
+                        </datalist>
+
+                        <p class="text-xs text-gray-500 mt-1 italic">
+                            * Gợi ý: Chọn mục có sẵn để báo cáo chính xác hơn.
+                        </p>
                     </div>
+
                 </div>
 
                 <div class="p-5 border-t border-gray-100 bg-gray-50">
@@ -130,7 +152,6 @@
             {% endif %}
         </div>
 
-        <!-- CỘT PHẢI: DANH SÁCH XE -->
         <div class="lg:col-span-2">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
                 <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-xl">
@@ -193,7 +214,6 @@
     </div>
 </div>
 
-<!-- MODAL IN PHIẾU -->
 {% if new_ticket %}
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 fade-in" id="printModal">
     <div class="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden transform scale-100 transition-transform">
@@ -218,11 +238,10 @@
     </div>
 </div>
 
-<!-- Vùng in ẩn -->
 <div id="printArea" class="hidden">
     <div style="font-family: monospace; width: 300px; margin: 0 auto; border: 1px solid #000; padding: 10px;">
         <div style="text-align: center;">
-            <h3 style="margin: 0; font-size: 20px; font-weight: bold;">GARAGE Ô TÔ</h3>
+            <h3 style="margin: 0; font-size: 20px; font-weight: bold;">GARAGE OTO PRO</h3>
             <p style="margin: 5px 0; font-size: 12px;">ĐC: 123 Đường ABC, TP.HCM</p>
             <hr style="border-top: 1px dashed #000; margin: 10px 0;">
             <h4 style="margin: 10px 0; font-size: 16px; font-weight: bold;">PHIẾU TIẾP NHẬN</h4>
@@ -257,7 +276,7 @@
                 document.getElementById('phone').value = data.khach_hang.dien_thoai || '';
                 document.getElementById('name').value = data.khach_hang.ten || '';
                 document.getElementById('address').value = data.khach_hang.dia_chi || '';
-                
+
                 plateInput.classList.remove('border-gray-300');
                 plateInput.classList.add('border-green-500', 'bg-green-50');
                 msg.innerHTML = '<span class="text-green-600 font-bold flex items-center"><i class="fa-solid fa-circle-check mr-1"></i> Xe cũ (Đã điền thông tin)</span>';
@@ -280,7 +299,7 @@
             if (data.found) {
                 document.getElementById('name').value = data.ten;
                 document.getElementById('address').value = data.dia_chi;
-                
+
                 phoneInput.classList.remove('border-gray-300');
                 phoneInput.classList.add('border-green-500', 'bg-green-50');
                 msg.innerHTML = '<span class="text-green-600 font-bold flex items-center"><i class="fa-solid fa-user-check mr-1"></i> Khách quen</span>';

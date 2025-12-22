@@ -3,36 +3,25 @@
 <div class="fade-in h-full flex flex-col">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-            <i class="fa-solid fa-cash-register mr-3 text-green-600"></i>Thanh toán dịch vụ
+            <i class="fa-solid fa-cash-register mr-3 text-green-600"></i>Quầy Thu Ngân
         </h2>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 overflow-hidden">
 
-        <!-- CỘT TRÁI: DANH SÁCH CHỜ THANH TOÁN (Mục DS Phiếu 1.1) -->
-        <div class="lg:col-span-8 flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-[calc(100vh-180px)]">
-            <!-- Filter Bar -->
+        <div class="lg:col-span-7 flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-[calc(100vh-180px)]">
             <div class="p-4 border-b border-gray-200 bg-gray-50 flex gap-2">
                 <div class="relative flex-1">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fa-solid fa-search"></i></span>
-                    <input type="text" id="searchPayment" class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Tìm biển số, khách hàng...">
+                    <input type="text" id="searchBox" onkeyup="filterList()" class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500" placeholder="Tìm SĐT, Tên khách hoặc Biển số...">
                 </div>
-                <select class="border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white">
-                    <option>Tất cả</option>
-                    <option>Hôm nay</option>
-                </select>
-                <button class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm"><i class="fa-solid fa-rotate"></i></button>
             </div>
 
-            <!-- List -->
             <div class="flex-1 overflow-y-auto">
-                <table class="w-full text-sm text-left text-gray-600">
+                <table class="w-full text-sm text-left text-gray-600" id="paymentTable">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0">
                         <tr>
-                            <th class="px-4 py-3">Biển số</th>
-                            <th class="px-4 py-3">Khách hàng</th>
-                            <th class="px-4 py-3 text-right">Tiền công</th>
-                            <th class="px-4 py-3 text-right">Vật tư</th>
+                            <th class="px-4 py-3">Xe / Khách</th>
                             <th class="px-4 py-3 text-right">Tổng (tạm)</th>
                             <th class="px-4 py-3 text-center">Tác vụ</th>
                         </tr>
@@ -40,24 +29,33 @@
                     <tbody class="divide-y divide-gray-100">
                         {% for p in list %}
                         {% set tong_vt = namespace(value=0) %}
-                        {% for c in p.chi_tiet %}
-                            {% set tong_vt.value = tong_vt.value + (c.so_luong * c.don_gia) %}
-                        {% endfor %}
-                        <tr class="hover:bg-blue-50 transition cursor-pointer group" onclick="selectPayment('{{ p.id }}', '{{ p.phieu_tiep_nhan.xe.bien_so }}', '{{ p.tien_cong }}', '{{ tong_vt.value }}')">
-                            <td class="px-4 py-3 font-bold text-blue-600">{{ p.phieu_tiep_nhan.xe.bien_so }}</td>
-                            <td class="px-4 py-3">{{ p.phieu_tiep_nhan.xe.khach_hang.ten }}</td>
-                            <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(p.tien_cong) }}</td>
-                            <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(tong_vt.value) }}</td>
-                            <td class="px-4 py-3 text-right font-bold text-gray-800">{{ "{:,.0f}".format(p.tien_cong + tong_vt.value) }}</td>
+                        {% for c in p.chi_tiet %}{% set tong_vt.value = tong_vt.value + (c.so_luong * c.don_gia) %}{% endfor %}
+                        {% set total = p.tien_cong + tong_vt.value %}
+
+                        <tr class="hover:bg-blue-50 transition group data-row cursor-pointer"
+                            onclick="selectBill({{ p.id }}, '{{ p.phieu_tiep_nhan.xe.bien_so }}', {{ total }})"
+                            data-search="{{ p.phieu_tiep_nhan.xe.khach_hang.dien_thoai }} {{ p.phieu_tiep_nhan.xe.khach_hang.ten }} {{ p.phieu_tiep_nhan.xe.bien_so }}">
+
+                            <td class="px-4 py-3">
+                                <div class="font-bold text-blue-600 text-lg">{{ p.phieu_tiep_nhan.xe.bien_so }}</div>
+                                <div class="text-xs text-gray-500 font-medium">{{ p.phieu_tiep_nhan.xe.khach_hang.ten }}</div>
+                                <div class="text-xs text-gray-400">{{ p.phieu_tiep_nhan.xe.khach_hang.dien_thoai }}</div>
+                            </td>
+                            <td class="px-4 py-3 text-right font-bold text-gray-800 text-base" data-val="{{ total }}">
+                                {{ "{:,.0f}".format(total) }}
+                            </td>
                             <td class="px-4 py-3 text-center">
-                                <button class="text-green-600 bg-green-50 hover:bg-green-100 p-2 rounded-lg text-xs font-bold transition group-hover:scale-105 shadow-sm">
-                                    Chọn <i class="fa-solid fa-arrow-right"></i>
+                                <button class="text-green-600 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-green-200 transition transform hover:scale-105">
+                                    Chọn <i class="fa-solid fa-chevron-right ml-1"></i>
                                 </button>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="px-4 py-10 text-center text-gray-400">Không có xe nào chờ thanh toán.</td>
+                            <td colspan="3" class="px-4 py-10 text-center text-gray-400">
+                                <i class="fa-solid fa-clipboard-check text-4xl mb-3 opacity-30"></i>
+                                <p>Không có phiếu cần thanh toán.</p>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -65,117 +63,317 @@
             </div>
         </div>
 
-        <!-- CỘT PHẢI: FORM THANH TOÁN (Mục Payment 2, 3, 4) -->
-        <div class="lg:col-span-4 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col h-[calc(100vh-180px)]">
-            <div class="p-5 border-b border-gray-100 bg-gray-50">
-                <h3 class="font-bold text-gray-800">Thông tin thanh toán</h3>
-                <p class="text-xs text-gray-500 mt-1">Vui lòng chọn phiếu bên trái</p>
+        <div class="lg:col-span-5 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col h-[calc(100vh-180px)]">
+            <div class="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-t-xl shadow-sm">
+                <h3 class="font-bold flex items-center text-lg"><i class="fa-regular fa-credit-card mr-2"></i>Thông tin giao dịch</h3>
             </div>
 
-            <form method="post" class="flex-1 flex flex-col" id="paymentForm">
-                <input type="hidden" name="repair_id" id="selected_repair_id">
+            <div id="emptyState" class="flex-1 flex flex-col items-center justify-center text-gray-400 p-10 animate-fade-in">
+                <div class="bg-gray-50 p-6 rounded-full mb-4">
+                    <i class="fa-solid fa-receipt text-4xl text-gray-300"></i>
+                </div>
+                <p class="font-medium">Vui lòng chọn phiếu bên trái để thanh toán.</p>
+            </div>
 
-                <div class="p-5 flex-1 overflow-y-auto space-y-4">
-                    <!-- Thông tin tóm tắt -->
-                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <div class="flex justify-between mb-1">
-                            <span class="text-xs text-gray-500">Biển số xe</span>
-                            <span class="text-sm font-bold text-gray-800" id="display_plate">--</span>
+            <div id="paymentForm" class="hidden flex-1 flex flex-col animate-fade-in">
+                <div class="p-6 flex-1 overflow-y-auto space-y-6">
+
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-4">
+                        <div>
+                            <span class="text-gray-500 text-xs uppercase font-bold tracking-wider">Biển số xe</span>
+                            <div class="font-bold text-2xl text-blue-600 mt-1" id="lblPlate">--</div>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-xs text-gray-500">Mã phiếu</span>
-                            <span class="text-sm font-medium text-gray-800" id="display_id">--</span>
+                        <div class="text-right">
+                             <span class="text-gray-500 text-xs uppercase font-bold tracking-wider">Mã phiếu</span>
+                             <div class="font-bold text-gray-800 mt-1" id="lblId">--</div>
                         </div>
                     </div>
 
-                    <!-- Payment Method Tabs (Mục 2) -->
+                    <div class="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-medium text-gray-600">Tổng tiền hàng & công:</label>
+                            <span class="font-bold text-gray-800" id="lblSubtotal">0</span>
+                        </div>
+
+                        <div class="flex justify-between items-center group">
+                            <label class="text-sm font-medium text-gray-600 flex items-center">
+                                <i class="fa-solid fa-tag text-gray-400 mr-2 group-hover:text-blue-500 transition"></i> Giảm giá:
+                            </label>
+                            <div class="relative w-32">
+                                <input type="number" id="inpDiscount" oninput="calcTotal()" value="0" class="w-full text-right border border-gray-300 rounded p-1 text-sm focus:ring-blue-500 focus:border-blue-500 font-medium">
+                                <span class="absolute right-8 top-1 text-xs text-gray-400 hidden">đ</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-medium text-gray-600 flex items-center">
+                                <i class="fa-solid fa-percent text-gray-400 mr-2"></i> Thuế VAT:
+                            </label>
+                            {% if vat_config is not none %}
+                                <div class="flex items-center">
+                                    <span class="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-sm">{{ vat_config * 100 }}%</span>
+                                    <input type="hidden" id="inpVAT" value="{{ vat_config }}">
+                                </div>
+                            {% else %}
+                                <div class="flex items-center relative" title="Hệ thống chưa cấu hình VAT">
+                                    <input type="number" id="inpVAT" oninput="calcTotal()" value="0.1" step="0.01" max="0.3" class="w-20 text-right border border-yellow-400 bg-yellow-50 rounded p-1 text-sm font-bold text-yellow-700 focus:ring-yellow-500 pr-1" placeholder="VD: 0.1">
+                                    <i class="fa-solid fa-circle-exclamation text-yellow-500 ml-2 animate-pulse"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="border-t border-gray-200 pt-3 mt-2">
+                            <div class="flex justify-between items-end">
+                                <span class="text-gray-800 font-bold text-sm uppercase">Khách phải trả:</span>
+                                <span class="text-2xl font-bold text-red-600" id="lblFinalTotal">0</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Phương thức thanh toán</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="method" value="cash" class="peer sr-only" checked>
-                                <div class="text-center py-2 border rounded-lg peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600 transition hover:bg-gray-50 text-sm font-medium text-gray-600">
-                                    <i class="fa-solid fa-money-bill-1 mr-1"></i> Tiền mặt
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-3">Phương thức thanh toán</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer relative">
+                                <input type="radio" name="method" value="cash" checked onchange="toggleMethod()" class="peer sr-only">
+                                <div class="text-center py-3 border-2 border-gray-200 rounded-lg peer-checked:bg-green-50 peer-checked:border-green-500 peer-checked:text-green-700 transition hover:bg-gray-50">
+                                    <div class="font-bold text-sm"><i class="fa-solid fa-money-bill-wave mr-1"></i> Tiền mặt</div>
                                 </div>
+                                <div class="absolute top-[-8px] right-[-8px] bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hidden peer-checked:flex"><i class="fa-solid fa-check"></i></div>
                             </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="method" value="transfer" class="peer sr-only">
-                                <div class="text-center py-2 border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition hover:bg-gray-50 text-sm font-medium text-gray-600">
-                                    <i class="fa-solid fa-qrcode mr-1"></i> Chuyển khoản
+                            <label class="cursor-pointer relative">
+                                <input type="radio" name="method" value="transfer" onchange="toggleMethod()" class="peer sr-only">
+                                <div class="text-center py-3 border-2 border-gray-200 rounded-lg peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition hover:bg-gray-50">
+                                    <div class="font-bold text-sm"><i class="fa-solid fa-building-columns mr-1"></i> Chuyển khoản</div>
                                 </div>
+                                <div class="absolute top-[-8px] right-[-8px] bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hidden peer-checked:flex"><i class="fa-solid fa-check"></i></div>
                             </label>
                         </div>
-                    </div>
 
-                    <!-- Invoice Options (Mục 4) -->
-                    <div class="space-y-2">
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500" checked>
-                            <span class="text-sm text-gray-700">In hóa đơn ngay</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500">
-                            <span class="text-sm text-gray-700">Gửi hóa đơn qua Email</span>
-                        </label>
-                    </div>
-
-                    <hr class="border-dashed border-gray-300">
-
-                    <!-- Totals -->
-                    <div class="space-y-2">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Thành tiền:</span>
-                            <span class="font-medium" id="display_subtotal">0</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">VAT (10%):</span>
-                            <span class="font-medium" id="display_vat">0</span>
-                        </div>
-                        <div class="flex justify-between items-end pt-2 border-t border-gray-100 mt-2">
-                            <span class="font-bold text-gray-800">TỔNG THANH TOÁN</span>
-                            <span class="text-2xl font-bold text-green-600" id="display_total">0</span>
+                        <div id="cashArea" class="mt-4 p-4 bg-green-50 rounded-lg border border-green-100 transition-all duration-300">
+                            <div class="flex justify-between items-center mb-3">
+                                <label class="text-sm font-bold text-gray-700">Tiền khách đưa:</label>
+                                <input type="number" id="inpTendered" oninput="calcTotal()" class="w-40 text-right border-2 border-green-200 rounded p-2 font-bold text-gray-800 focus:ring-green-500 focus:border-green-500 text-lg shadow-sm" placeholder="0">
+                            </div>
+                            <div class="flex justify-between items-center border-t border-green-200 pt-2">
+                                <label class="text-sm font-bold text-gray-600">Tiền thừa trả lại:</label>
+                                <span class="font-bold text-green-700 text-xl" id="lblChange">0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Actions (Mục 6, 7, 8) -->
-                <div class="p-5 border-t border-gray-100 bg-gray-50 grid grid-cols-2 gap-3">
-                    <button type="button" class="bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-100 transition">
-                        Lưu Nháp
+                <div class="p-5 border-t border-gray-100 bg-gray-50 flex gap-3">
+                    <button onclick="resetForm()" class="px-5 py-3 bg-white border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100 font-bold text-sm transition">
+                        <i class="fa-solid fa-xmark mr-1"></i> Hủy
                     </button>
-                    <button type="submit" id="btnPay" class="bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed" disabled onclick="return confirm('Xác nhận thanh toán?');">
-                        <i class="fa-solid fa-check mr-1"></i> XÁC NHẬN
+                    <button onclick="submitPayment()" id="btnSubmit" class="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-3 rounded-lg shadow-lg transform active:scale-95 transition flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-check-circle mr-2"></i> XÁC NHẬN THANH TOÁN
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    function selectPayment(id, plate, labor, parts) {
-        // Cập nhật UI bên phải
-        document.getElementById('selected_repair_id').value = id;
-        document.getElementById('display_plate').innerText = plate;
-        document.getElementById('display_id').innerText = 'PSC-' + id;
+    let currentId = null;
+    let currentSubtotal = 0;
+    let finalAmount = 0;
 
-        // Tính toán tiền
-        let subtotal = parseFloat(labor) + parseFloat(parts);
-        let vat = subtotal * 0.1;
-        let total = subtotal + vat;
+    function filterList() {
+        const term = document.getElementById('searchBox').value.toLowerCase();
+        const rows = document.querySelectorAll('.data-row');
+        let hasVisible = false;
+        rows.forEach(row => {
+            const txt = row.getAttribute('data-search').toLowerCase();
+            if (txt.includes(term)) {
+                row.style.display = ''; hasVisible = true;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
 
-        // Format tiền
-        const fmt = (n) => n.toLocaleString('vi-VN') + ' đ';
+    function selectBill(id, plate, subtotal) {
+        currentId = id;
+        currentSubtotal = subtotal;
 
-        document.getElementById('display_subtotal').innerText = fmt(subtotal);
-        document.getElementById('display_vat').innerText = fmt(vat);
-        document.getElementById('display_total').innerText = fmt(total);
+        // Switch view
+        document.getElementById('emptyState').classList.add('hidden');
+        document.getElementById('paymentForm').classList.remove('hidden');
 
-        // Enable nút
-        document.getElementById('btnPay').disabled = false;
+        // Update UI info
+        document.getElementById('lblPlate').innerText = plate;
+        document.getElementById('lblId').innerText = 'PSC-' + id;
+        document.getElementById('lblSubtotal').innerText = subtotal.toLocaleString('vi-VN') + ' đ';
 
-        // Hiệu ứng visual (active row)
-        // (Có thể thêm class active cho row nếu cần)
+        // Reset inputs
+        document.getElementById('inpDiscount').value = 0;
+        document.getElementById('inpTendered').value = '';
+
+        // Recalculate
+        calcTotal();
+    }
+
+    function toggleMethod() {
+        const method = document.querySelector('input[name="method"]:checked').value;
+        const cashArea = document.getElementById('cashArea');
+        if (method === 'cash') {
+            cashArea.classList.remove('hidden');
+            cashArea.classList.remove('opacity-0');
+        } else {
+            cashArea.classList.add('hidden');
+            cashArea.classList.add('opacity-0');
+        }
+        calcTotal(); // Re-validate button
+    }
+
+    function calcTotal() {
+        const discount = parseFloat(document.getElementById('inpDiscount').value) || 0;
+        const vatRate = parseFloat(document.getElementById('inpVAT').value) || 0;
+
+        // Logic: (Tổng tiền - Giảm giá) * (1 + VAT)
+        let taxable = currentSubtotal - discount;
+        if(taxable < 0) taxable = 0;
+
+        let tax = taxable * vatRate;
+        finalAmount = taxable + tax;
+
+        document.getElementById('lblFinalTotal').innerText = finalAmount.toLocaleString('vi-VN') + ' đ';
+
+        // Logic Tiền thừa
+        const tendered = parseFloat(document.getElementById('inpTendered').value) || 0;
+        const change = tendered - finalAmount;
+
+        const lblChange = document.getElementById('lblChange');
+        if(change >= 0) {
+            lblChange.innerText = change.toLocaleString('vi-VN') + ' đ';
+            lblChange.className = "font-bold text-green-700 text-xl";
+        } else {
+            lblChange.innerText = change.toLocaleString('vi-VN') + ' đ';
+            lblChange.className = "font-bold text-red-600 text-xl";
+        }
+
+        // Validate Submit Button
+        const method = document.querySelector('input[name="method"]:checked').value;
+        const btn = document.getElementById('btnSubmit');
+
+        if (method === 'cash' && change < 0) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-2"></i> KHÁCH ĐƯA THIẾU TIỀN';
+            btn.classList.remove('from-green-600', 'to-green-500');
+            btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check-circle mr-2"></i> XÁC NHẬN THANH TOÁN';
+            btn.classList.add('from-green-600', 'to-green-500');
+            btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        }
+    }
+
+    function submitPayment() {
+        if (!confirm('Xác nhận thanh toán giao dịch này? Hành động này không thể hoàn tác.')) return;
+
+        const method = document.querySelector('input[name="method"]:checked').value;
+        const discount = parseFloat(document.getElementById('inpDiscount').value) || 0;
+        const tendered = parseFloat(document.getElementById('inpTendered').value) || 0;
+        const vatInput = document.getElementById('inpVAT');
+
+        let manualVat = null;
+        if(vatInput.type !== 'hidden') {
+            manualVat = vatInput.value;
+        }
+
+        // UI Loading state
+        const btn = document.getElementById('btnSubmit');
+        const oldText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Đang xử lý...';
+
+        fetch('/payment', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                repair_id: currentId,
+                method: method,
+                discount: discount,
+                tendered: tendered,
+                manual_vat: manualVat
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // In hóa đơn
+                printReceipt(data.data, data.warning);
+
+                if (data.warning) {
+                    alert('⚠️ CẢNH BÁO OFFLINE: ' + data.msg);
+                } else {
+                    alert('✅ ' + data.msg);
+                }
+                window.location.reload();
+            } else {
+                alert('❌ LỖI: ' + data.msg);
+                btn.disabled = false;
+                btn.innerHTML = oldText;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('❌ Lỗi kết nối máy chủ! Vui lòng thử lại.');
+            btn.disabled = false;
+            btn.innerHTML = oldText;
+        });
+    }
+
+    function printReceipt(data, isOffline) {
+        // Tạo cửa sổ in ảo
+        const w = window.open('', '', 'width=400,height=600');
+        const dateStr = new Date().toLocaleString('vi-VN');
+        const warningHtml = isOffline ? '<p style="color:red; font-weight:bold; border:1px dashed red; padding:5px;">HÓA ĐƠN TẠM (OFFLINE)</p>' : '';
+
+        const html = `
+        <html>
+        <head>
+            <title>In Hóa Đơn</title>
+            <style>
+                body { font-family: monospace; padding: 20px; text-align: center; }
+                .line { border-bottom: 1px dashed #000; margin: 10px 0; }
+                .flex { display: flex; justify-content: space-between; }
+                .bold { font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <h2>GARAGE OTO PRO</h2>
+            <p>ĐC: 123 Đường ABC, TP.HCM</p>
+            <div class="line"></div>
+            <h3>HÓA ĐƠN THANH TOÁN</h3>
+            ${warningHtml}
+            <p>Số: ${data.id}</p>
+            <p>Ngày: ${dateStr}</p>
+            <div class="line"></div>
+            <div class="flex"><span>Phương thức:</span> <span>${data.method == 'cash' ? 'Tiền mặt' : 'Chuyển khoản'}</span></div>
+            <div class="flex"><span>VAT:</span> <span>${data.vat_rate * 100}%</span></div>
+            <div class="line"></div>
+            <div class="flex bold" style="font-size:1.2em"><span>TỔNG CỘNG:</span> <span>${data.total.toLocaleString()} đ</span></div>
+            ${data.method == 'cash' ? `<div class="flex"><span>Tiền thừa:</span> <span>${data.change.toLocaleString()} đ</span></div>` : ''}
+            <div class="line"></div>
+            <p>Cảm ơn quý khách!</p>
+            <p>Hẹn gặp lại.</p>
+        </body>
+        </html>
+        `;
+        w.document.write(html);
+        w.document.close();
+        w.print();
+        setTimeout(() => w.close(), 1000);
+    }
+
+    function resetForm() {
+        document.getElementById('emptyState').classList.remove('hidden');
+        document.getElementById('paymentForm').classList.add('hidden');
+        currentId = null;
     }
 </script>
 {% endblock %}

@@ -5,6 +5,10 @@ from app.models import PhieuTiepNhan, UserRole
 from app.decorators import role_required
 from datetime import datetime
 import re, json
+import csv
+from io import StringIO
+from flask import make_response
+
 
 main = Blueprint('main', __name__)
 
@@ -23,7 +27,8 @@ def login_view():
     if request.method == 'POST':
         u = dao.auth_user(request.form.get('username'), request.form.get('password'))
         if u:
-            login_user(u); return redirect(url_for('main.index'))
+            login_user(u);
+            return redirect(url_for('main.index'))
         else:
             flash('Đăng nhập thất bại', 'danger')
     return render_template('login.html')
@@ -119,11 +124,14 @@ def reception():
                     plate=plate, brand=brand_input.title(), issue=form_data.get('issue')
                 )
                 if success:
-                    flash(msg, 'success'); new_ticket = ticket_obj; form_data = {}
+                    flash(msg, 'success');
+                    new_ticket = ticket_obj;
+                    form_data = {}
                 else:
                     db_error = msg
             except Exception as e:
-                db_error = "Lỗi kết nối!"; print(f"ERROR: {e}")
+                db_error = "Lỗi kết nối!";
+                print(f"ERROR: {e}")
 
     return render_template('reception.html', tickets=dao.get_today_receptions(), limit_reached=is_limit_reached,
                            form_data=form_data, errors=errors, db_error=db_error, new_ticket=new_ticket,
@@ -155,7 +163,9 @@ def repair():
             else:
                 ok, msg = dao.save_repair_ticket_v2(pid, current_user.id, items, labor, action)
                 if ok:
-                    session['cart'] = {}; flash(msg, 'success'); return redirect(url_for('main.tech_dashboard'))
+                    session['cart'] = {};
+                    flash(msg, 'success');
+                    return redirect(url_for('main.tech_dashboard'))
                 else:
                     flash(msg, 'danger')
         except Exception as e:
@@ -167,19 +177,117 @@ def repair():
 @main.route('/payment', methods=['GET', 'POST'])
 @role_required(UserRole.ADMIN, UserRole.THU_NGAN)
 def payment():
+    # 1. Xử lý API thanh toán (POST)
     if request.method == 'POST':
         try:
-            dao.process_payment(request.form['repair_id'], current_user.id); flash('Thanh toán OK', 'success')
+            data = request.json
+            repair_id = data.get('repair_id')
+            method = data.get('method')  # 'cash', 'transfer', 'pos'
+            discount = float(data.get('discount', 0))
+            tendered = float(data.get('tendered', 0))
+            manual_vat = data.get('manual_vat')  # Có thể là None nếu đã cấu hình VAT trong DB
+
+            # Gọi hàm xử lý nâng cao trong DAO
+            result = dao.process_payment_advanced(
+                repair_id=repair_id,
+                user_id=current_user.id,
+                payment_method=method,
+                amount_tendered=tendered,
+                discount=discount,
+                manual_vat=manual_vat
+            )
+            return jsonify(result)
         except Exception as e:
-            flash(str(e), 'danger')
-        return redirect(url_for('main.payment'))
-    return render_template('payment.html', list=dao.get_pending_payments())
+            return jsonify({"success": False, "msg": f"Lỗi Server: {str(e)}"})
+
+    # 2. Xử lý giao diện (GET)
+    # Lấy cấu hình VAT để hiển thị cho Frontend biết có cần nhập tay không
+    current_vat = dao.get_config_vat()
+
+    # Lấy danh sách phiếu chờ thanh toán
+    pending_list = dao.get_pending_payments()
+
+    return render_template('payment.html', list=pending_list, vat_config=current_vat)
 
 
 @main.route('/report')
 @role_required(UserRole.ADMIN)
 def report():
-    m = request.args.get('month', 12);
-    y = request.args.get('year', 2025)
-    data = dao.get_revenue(m, y)
-    return render_template('report.html', labels=[str(d[0].day) for d in data], values=[d[1] for d in data], m=m, y=y)
+    # 1. Lấy tham số Filter
+    report_type = request.args.get('type', 'revenue')
+    # Mặc định lấy tháng hiện tại
+    now = datetime.now()
+    default_start = now.replace(day=1).strftime('%Y-%m-%d')
+    default_end = now.strftime('%Y-%m-%d')
+
+    from_date = request.args.get('from_date', default_start)
+    to_date = request.args.get('to_date', default_end)
+
+    # 2. Gọi DAO để lấy dữ liệu & Validate
+    result = dao.get_report_data_by_range(from_date, to_date, report_type)
+
+    # 3. Xử lý kết quả trả về
+    error_msg = None
+    if "error" in result:
+        flash(result["error"], "danger")
+        error_msg = result["error"]
+        result = {"data": [], "summary": {"total": 0}}  # Reset data rỗng
+    elif not result["data"]:
+        # Trường hợp hợp lệ nhưng không có dữ liệu
+        flash("Không có dữ liệu trong khoảng thời gian này.", "warning")
+
+    return render_template('report.html',
+                           report_data=result,
+                           filter={"from": from_date, "to": to_date, "type": report_type},
+                           error_msg=error_msg)
+
+
+# app/routes.py (Đoạn hàm export_report)
+
+@main.route('/report/export')
+@role_required(UserRole.ADMIN)
+def export_report():
+    try:
+        report_type = request.args.get('type', 'revenue')
+        from_date = request.args.get('from_date')
+        to_date = request.args.get('to_date')
+
+        result = dao.get_report_data_by_range(from_date, to_date, report_type)
+
+        if "error" in result or not result["data"]:
+            flash("Không có dữ liệu để xuất file!", "warning")
+            return redirect(url_for('main.report'))
+
+        si = StringIO()
+        si.write('\ufeff')  # Thêm BOM để Excel đọc được tiếng Việt
+        cw = csv.writer(si)
+
+        # --- LOGIC HEADER MỚI ---
+        if report_type == 'revenue':
+            cw.writerow(['Ngày', 'Số hóa đơn', 'Doanh thu (VNĐ)'])
+            for row in result['data']:
+                cw.writerow([row['label'], row['count'], "{:.0f}".format(row['value'])])
+
+        elif report_type == 'reception':
+            cw.writerow(['Ngày', 'Số lượng xe tiếp nhận'])
+            for row in result['data']:
+                cw.writerow([row['label'], row['value']])
+
+        elif report_type == 'parts':
+            cw.writerow(['Tên linh kiện', 'Số lượng bán', 'Tổng doanh thu (VNĐ)'])
+            for row in result['data']:
+                cw.writerow([row['label'], row['value'], "{:.0f}".format(row['total_money'])])
+
+        elif report_type == 'issues':
+            cw.writerow(['Tên lỗi / Tình trạng', 'Số lần gặp'])
+            for row in result['data']:
+                cw.writerow([row['label'], row['value']])
+
+        output = make_response(si.getvalue())
+        output.headers["Content-Disposition"] = f"attachment; filename=baocao_{report_type}_{from_date}.csv"
+        output.headers["Content-type"] = "text/csv"
+        return output
+
+    except Exception as e:
+        flash(f"Lỗi: {str(e)}", "danger")
+        return redirect(url_for('main.report'))
