@@ -9,7 +9,6 @@ import csv
 from io import StringIO
 from flask import make_response
 
-
 main = Blueprint('main', __name__)
 
 
@@ -132,8 +131,8 @@ def reception():
             except Exception as e:
                 db_error = "Lỗi kết nối!";
                 print(f"ERROR: {e}")
-
-    return render_template('reception.html', tickets=dao.get_today_receptions(), limit_reached=is_limit_reached,
+    max_xe = dao.get_daily_limit()
+    return render_template('reception.html', tickets=dao.get_today_receptions(), max_xe=max_xe,
                            form_data=form_data, errors=errors, db_error=db_error, new_ticket=new_ticket,
                            valid_brands=brand_names_display)
 
@@ -148,30 +147,84 @@ def tech_dashboard():
 @role_required(UserRole.ADMIN, UserRole.KY_THUAT)
 def repair():
     pid = request.args.get('id')
-    if not pid: flash('Chọn xe trước.', 'warning'); return redirect(url_for('main.tech_dashboard'))
+    if not pid:
+        flash('Chọn xe trước.', 'warning')
+        return redirect(url_for('main.tech_dashboard'))
 
     ticket = dao.get_reception_by_id(pid)
-    if not ticket: flash('Phiếu không tồn tại.', 'danger'); return redirect(url_for('main.tech_dashboard'))
+    if not ticket:
+        flash('Phiếu không tồn tại.', 'danger')
+        return redirect(url_for('main.tech_dashboard'))
+
+    # Lấy VAT config
+    vat_rate = dao.get_config_vat() or 0.0
+
+    # -----------------------------------------------------------
+    # [NEW CODE] LOGIC TẢI BẢN NHÁP TỪ DATABASE (NẾU CÓ)
+    # -----------------------------------------------------------
+    # Mặc định lấy từ session (nếu đang thao tác dở)
+    cart_data = session.get('cart', {})
+    labor_cost_value = 0.0
+
+    # Nếu Request là GET (mới mở trang) và Phiếu này đã có bản lưu trong DB
+    if request.method == 'GET' and ticket.phieu_sua_chua:
+        # Nếu session đang trống (hoặc bạn muốn ưu tiên DB), hãy load từ DB lên
+        # Lưu ý: ticket.phieu_sua_chua là quan hệ 1-1 trong models.py
+        draft = ticket.phieu_sua_chua
+
+        # 1. Load tiền công đã lưu
+        labor_cost_value = draft.tien_cong
+
+        # 2. Load danh sách linh kiện đã lưu vào biến cart_data
+        # Cấu trúc phải giống hệt lúc bạn lưu vào session (id, name, price, qty)
+        cart_data = {}
+        for ct in draft.chi_tiet:
+            s_id = str(ct.linh_kien_id)
+            cart_data[s_id] = {
+                'id': ct.linh_kien_id,
+                'name': ct.linh_kien.ten,
+                'price': ct.don_gia,
+
+                # --- SỬA Ở ĐÂY ---
+                'qty': ct.so_luong,  # Đổi 'quantity' thành 'qty' cho khớp với JS
+                'max': ct.linh_kien.so_luong_ton  # Thêm dòng này để JS biết giới hạn tồn kho
+            }
+
+        # Cập nhật lại session để thao tác tiếp theo (xóa/sửa) được đồng bộ
+        session['cart'] = cart_data
+
+        flash(f"Đã tải lại bản nháp (Lần sửa cuối: {draft.ngay_sua.strftime('%H:%M %d/%m')})", "info")
+    # -----------------------------------------------------------
 
     if request.method == 'POST':
         try:
             items = json.loads(request.form.get('items_json') or '[]')
             labor = float(request.form.get('labor_cost', 0))
             action = request.form.get('action')
+
             if not items and labor == 0:
                 flash("Nhập liệu!", "warning")
             else:
                 ok, msg = dao.save_repair_ticket_v2(pid, current_user.id, items, labor, action)
                 if ok:
-                    session['cart'] = {};
-                    flash(msg, 'success');
+                    # Nếu lưu thành công (đặc biệt là Hoàn thành), có thể xóa cart session
+                    if action != 'draft':
+                        session['cart'] = {}
+                    flash(msg, 'success')
                     return redirect(url_for('main.tech_dashboard'))
                 else:
                     flash(msg, 'danger')
         except Exception as e:
             flash(f"Lỗi: {e}", "danger")
 
-    return render_template('repair.html', ticket=ticket, cart=session.get('cart', {}))
+    # Truyền cart_data và labor_cost_value xuống template
+    return render_template(
+        'repair.html',
+        ticket=ticket,
+        cart=cart_data,
+        vat_rate=vat_rate,
+        labor_cost=labor_cost_value  # Cần sửa thêm ở template để hiển thị số này
+    )
 
 
 @main.route('/payment', methods=['GET', 'POST'])
@@ -291,3 +344,28 @@ def export_report():
     except Exception as e:
         flash(f"Lỗi: {str(e)}", "danger")
         return redirect(url_for('main.report'))
+
+
+# --- Thêm vào file QuanLyGara/app/routes.py ---
+
+@main.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password_view():
+    if request.method == 'POST':
+        old_pass = request.form.get('old_pass')
+        new_pass = request.form.get('new_pass')
+        confirm_pass = request.form.get('confirm_pass')
+
+        if not old_pass or not new_pass or not confirm_pass:
+            flash('Vui lòng nhập đầy đủ thông tin', 'warning')
+        elif new_pass != confirm_pass:
+            flash('Mật khẩu xác nhận không khớp', 'danger')
+        else:
+            success, msg = dao.change_password(current_user.id, old_pass, new_pass)
+            if success:
+                flash(msg, 'success')
+                return redirect(url_for('main.index'))
+            else:
+                flash(msg, 'danger')
+
+    return render_template('change_password.html')

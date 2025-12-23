@@ -8,7 +8,9 @@
         <div class="flex items-center space-x-3">
             <div class="text-sm bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
                 <span class="text-gray-500">Giới hạn ngày:</span>
-                <span class="font-bold {{ 'text-red-600' if tickets|length >= 30 else 'text-blue-600' }} text-lg ml-1">{{ tickets|length }}/30</span>
+                <span class="font-bold {{ 'text-red-600' if tickets|length >= max_xe else 'text-blue-600' }} text-lg ml-1">
+                    {{ tickets|length }}/{{ max_xe }}
+                </span>
             </div>
         </div>
     </div>
@@ -246,7 +248,7 @@
             </div>
             <p class="text-gray-600 mb-1">Đã tạo phiếu tiếp nhận cho xe</p>
             <h2 class="text-3xl font-bold text-blue-600 mb-4">{{ new_ticket.xe.bien_so }}</h2>
-            <p class="text-sm text-gray-500">Bạn có muốn in phiếu tiếp nhận ngay bây giờ không?</p>
+            <p class="text-sm text-gray-500">Hệ thống đã chuẩn bị phiếu in (02 liên).</p>
         </div>
         <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
             <button onclick="closeModal()"
@@ -255,37 +257,75 @@
             </button>
             <button onclick="printTicket()"
                     class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm flex items-center">
-                <i class="fa-solid fa-print mr-2"></i> In Phiếu
+                <i class="fa-solid fa-print mr-2"></i> In Phiếu Ngay
             </button>
         </div>
     </div>
 </div>
 
 <div id="printArea" class="hidden">
-    <div style="font-family: monospace; width: 300px; margin: 0 auto; border: 1px solid #000; padding: 10px;">
-        <div style="text-align: center;">
-            <h3 style="margin: 0; font-size: 20px; font-weight: bold;">GARAGE OTO PRO</h3>
-            <p style="margin: 5px 0; font-size: 12px;">ĐC: 123 Đường ABC, TP.HCM</p>
-            <hr style="border-top: 1px dashed #000; margin: 10px 0;">
-            <h4 style="margin: 10px 0; font-size: 16px; font-weight: bold;">PHIẾU TIẾP NHẬN</h4>
+    <div class="ticket-container">
+        <div class="ticket-copy">
+            <div class="header">
+                <h3>GARAGE OTO PRO</h3>
+                <p>ĐC: 123 Đường ABC, TP.HCM</p>
+                <hr class="divider">
+                <h3>PHIẾU TIẾP NHẬN</h3>
+                <p>(Liên 1: Khách hàng)</p>
+            </div>
+            <div class="content">
+                <div class="row"><span class="label">Ngày nhận:</span> <span class="value">{{ new_ticket.ngay_tiep_nhan.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                <div class="row"><span class="label">Biển số:</span> <span class="value bold">{{ new_ticket.xe.bien_so }}</span>
+                </div>
+                <div class="row"><span class="label">Hãng xe:</span> <span
+                        class="value">{{ new_ticket.xe.hieu_xe }}</span></div>
+                <div class="row"><span class="label">Khách hàng:</span> <span class="value">{{ new_ticket.xe.khach_hang.ten }}</span>
+                </div>
+                <div class="row"><span class="label">SĐT:</span> <span class="value">{{ new_ticket.xe.khach_hang.dien_thoai }}</span>
+                </div>
+                <hr class="dashed">
+                <div class="row block">
+                    <span class="label">Yêu cầu:</span>
+                    <div class="value mt-1">{{ new_ticket.tinh_trang }}</div>
+                </div>
+            </div>
+            <div class="footer">
+                <p>Cảm ơn quý khách!</p>
+            </div>
         </div>
-        <div style="font-size: 14px; line-height: 1.5;">
-            <p><strong>Ngày:</strong> {{ new_ticket.ngay_tiep_nhan.strftime('%d/%m/%Y %H:%M') }}</p>
-            <p><strong>Biển số:</strong> {{ new_ticket.xe.bien_so }}</p>
-            <p><strong>Hãng xe:</strong> {{ new_ticket.xe.hieu_xe }}</p>
-            <p><strong>Khách hàng:</strong> {{ new_ticket.xe.khach_hang.ten }}</p>
-            <p><strong>SĐT:</strong> {{ new_ticket.xe.khach_hang.dien_thoai }}</p>
-            <hr style="border-top: 1px dashed #000; margin: 10px 0;">
-            <p><strong>Yêu cầu:</strong><br>{{ new_ticket.tinh_trang }}</p>
-        </div>
-        <div style="text-align: center; margin-top: 20px; font-size: 12px;">
-            <p>Cảm ơn quý khách!</p>
+
+        <div class="cut-line"></div>
+
+        <div class="ticket-copy">
+            <div class="header">
+                <h3>PHIẾU TIẾP NHẬN</h3>
+                <p>(Liên 2: Lưu hồ sơ)</p>
+            </div>
+            <div class="content">
+                <div class="row"><span class="label">Ngày nhận:</span> <span class="value">{{ new_ticket.ngay_tiep_nhan.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                <div class="row"><span class="label">Biển số:</span> <span class="value bold">{{ new_ticket.xe.bien_so }}</span>
+                </div>
+                <div class="row"><span class="label">Khách hàng:</span> <span class="value">{{ new_ticket.xe.khach_hang.ten }}</span>
+                </div>
+                <hr class="dashed">
+                <div class="row block">
+                    <span class="label">Yêu cầu sửa chữa:</span>
+                    <div class="value mt-1">{{ new_ticket.tinh_trang }}</div>
+                </div>
+            </div>
+            <div class="footer">
+                <p>NV Tiếp nhận: {{ current_user.ten if current_user else 'NV' }}</p>
+                <div class="signature">Chữ ký khách hàng</div>
+            </div>
         </div>
     </div>
 </div>
 {% endif %}
 
 <script>
+    // --- GIỮ NGUYÊN CODE CŨ CỦA BẠN (CHECK PLATE, PHONE) ---
     function checkPlate() {
         let plateInput = document.getElementById('plate');
         let plate = plateInput.value;
@@ -334,17 +374,48 @@
         });
     }
 
+    // --- PHẦN MỚI: SỬA LỖI IN ẤN ---
     function closeModal() {
-        document.getElementById('printModal').style.display = 'none';
+        const modal = document.getElementById('printModal');
+        if (modal) modal.style.display = 'none';
     }
 
     function printTicket() {
-        var content = document.getElementById('printArea').innerHTML;
-        var myWindow = window.open('', '', 'width=450,height=600');
-        myWindow.document.write('<html><head><title>Print</title></head><body onload="window.print();window.close()">');
-        myWindow.document.write(content);
-        myWindow.document.write('</body></html>');
-        myWindow.document.close();
+        const printContent = document.getElementById('printArea').innerHTML;
+        const win = window.open('', '', 'height=700,width=500'); // Mở cửa sổ vừa phải
+
+        win.document.write('<html><head><title>In Phiếu Tiếp Nhận</title>');
+        // CSS trực tiếp để đảm bảo khi in không bị mất style
+        win.document.write('<style>');
+        win.document.write('body { font-family: "Courier New", monospace; margin: 10px; font-size: 12px; }');
+        win.document.write('.ticket-container { width: 100%; max-width: 80mm; margin: 0 auto; }');
+        win.document.write('.ticket-copy { padding: 5px 0; }');
+        win.document.write('.header { text-align: center; margin-bottom: 5px; }');
+        win.document.write('.header h3 { margin: 0; font-size: 14px; font-weight: bold; }');
+        win.document.write('.header p { margin: 2px 0; font-size: 10px; }');
+        win.document.write('.divider { border-top: 1px solid #000; margin: 5px 0; }');
+        win.document.write('.dashed { border-top: 1px dashed #000; margin: 5px 0; }');
+        win.document.write('.cut-line { border-top: 1px dashed #000; margin: 15px 0; position: relative; height: 10px; }');
+        win.document.write('.cut-line:after { content: "✂"; position: absolute; right: 0; top: -8px; background: #fff; }');
+        win.document.write('.row { display: flex; justify-content: space-between; margin-bottom: 3px; }');
+        win.document.write('.row.block { display: block; }');
+        win.document.write('.label { font-weight: bold; }');
+        win.document.write('.value.bold { font-weight: bold; font-size: 14px; }');
+        win.document.write('.mt-1 { margin-top: 2px; }');
+        win.document.write('.footer { text-align: center; margin-top: 10px; font-style: italic; }');
+        win.document.write('.signature { margin-top: 20px; border-top: 1px solid #000; width: 60%; margin-left: auto; margin-right: auto; padding-top: 2px; }');
+        win.document.write('</style>');
+        win.document.write('</head><body>');
+        win.document.write(printContent);
+        win.document.write('</body></html>');
+
+        win.document.close();
+        win.focus();
+
+        // Quan trọng: Đợi một chút để trình duyệt render xong mới in
+        setTimeout(function() {
+            win.print();
+        }, 500);
     }
 </script>
 {% endblock %}

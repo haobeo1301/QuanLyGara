@@ -1,178 +1,386 @@
 {% extends "layout.html" %}
-
 {% block content %}
-<div class="fade-in h-full flex flex-col">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-800 flex items-center">
-            <i class="fa-solid fa-file-invoice mr-2 text-blue-600"></i>Lập Phiếu Sửa Chữa: <span
-                class="ml-2 text-blue-700 bg-blue-100 px-2 rounded">{{ ticket.xe.bien_so }}</span>
+<div class="fade-in">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+            <i class="fa-solid fa-wrench mr-3 text-blue-600"></i>Lập phiếu sửa chữa
         </h2>
-        <a href="/technician/dashboard"
-           class="text-sm bg-white border border-gray-300 px-3 py-1.5 rounded hover:bg-gray-100 text-gray-600 transition">
-            <i class="fa-solid fa-arrow-left"></i> Quay lại
-        </a>
+        <div>
+            <a href="/technician/dashboard" class="text-gray-500 hover:text-gray-700 text-sm mr-4"><i
+                    class="fa-solid fa-arrow-left mr-1"></i> Quay lại</a>
+            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">Phiếu #{{ ticket.id }}</span>
+        </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 overflow-hidden">
-
-        <!-- CỘT TRÁI -->
-        <div class="lg:col-span-4 flex flex-col gap-4 overflow-y-auto pr-1">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                <h4 class="font-bold text-gray-700 mb-2 text-sm border-b pb-1">Thông tin xe</h4>
-                <div class="text-sm space-y-1 text-gray-600">
-                    <p>Khách: <span class="font-medium text-gray-900">{{ ticket.xe.khach_hang.ten }}</span></p>
-                    <p>SĐT: <span class="font-medium">{{ ticket.xe.khach_hang.dien_thoai }}</span></p>
-                    <p>Hãng: <span class="font-medium">{{ ticket.xe.hieu_xe }}</span></p>
-                    <div class="bg-gray-50 p-2 rounded mt-2 text-xs italic">"{{ ticket.tinh_trang }}"</div>
-                </div>
-            </div>
-
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col">
-                <h4 class="font-bold text-gray-700 mb-2 text-sm">Kho linh kiện</h4>
-                <div class="relative mb-3">
-                    <input type="text" id="searchPartInput" oninput="searchParts(this.value)"
-                           class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-blue-500"
-                           placeholder="Tìm tên linh kiện...">
-                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                </div>
-                <div id="partResults" class="flex-1 overflow-y-auto space-y-2 text-sm">
-                    <p class="text-center text-gray-400 text-xs mt-4">Đang tải...</p>
-                </div>
-            </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <p class="text-xs text-gray-500 uppercase font-bold">Xe</p>
+            <p class="text-lg font-bold text-blue-600">{{ ticket.xe.bien_so }}</p>
+            <p class="text-sm text-gray-600">{{ ticket.xe.hieu_xe }}</p>
         </div>
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <p class="text-xs text-gray-500 uppercase font-bold">Khách hàng</p>
+            <p class="text-lg font-bold text-gray-800">{{ ticket.xe.khach_hang.ten }}</p>
+            <p class="text-sm text-gray-600">{{ ticket.xe.khach_hang.dien_thoai }}</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <p class="text-xs text-gray-500 uppercase font-bold">Yêu cầu / Lỗi</p>
+            <p class="text-sm font-medium text-red-600 mt-1">{{ ticket.tinh_trang }}</p>
+            <p class="text-xs text-gray-400 mt-2">{{ ticket.ngay_tiep_nhan.strftime('%d/%m/%Y %H:%M') }}</p>
+        </div>
+    </div>
 
-        <!-- CỘT PHẢI -->
-        <div class="lg:col-span-8 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col">
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 class="font-bold text-gray-800">Hạng mục sửa chữa</h3>
-                <button onclick="removeAll()" class="text-xs text-red-500 hover:text-red-700">Xóa tất cả</button>
+    <form method="post" id="repairForm" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+
+        <input type="hidden" name="items_json" id="items_json">
+
+        <input type="hidden" id="vat_rate" value="{{ vat_rate }}">
+
+        <div class="p-6">
+            <div class="mb-6">
+                <label class="block mb-2 text-sm font-bold text-gray-700">Thêm linh kiện / Vật tư</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <i class="fa-solid fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" id="searchPart"
+                           class="block w-full p-3 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Nhập tên linh kiện để tìm kiếm..." autocomplete="off">
+
+                    <div id="searchResults"
+                         class="absolute z-10 w-full bg-white rounded-lg shadow-lg mt-1 border border-gray-100 hidden max-h-60 overflow-y-auto"></div>
+                </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto">
+            <div class="overflow-x-auto mb-6">
                 <table class="w-full text-sm text-left text-gray-600">
-                    <thead class="bg-gray-100 text-gray-700 text-xs uppercase sticky top-0">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
-                        <th class="px-4 py-2">Tên vật tư</th>
-                        <th class="px-4 py-2 text-center w-20">SL</th>
-                        <th class="px-4 py-2 text-right w-32">Đơn giá</th>
-                        <th class="px-4 py-2 text-right w-32">Thành tiền</th>
-                        <th class="px-4 py-2 text-center w-10"></th>
+                        <th class="px-4 py-3">Tên hạng mục / Linh kiện</th>
+                        <th class="px-4 py-3 text-center w-24">SL</th>
+                        <th class="px-4 py-3 text-right w-32">Đơn giá</th>
+                        <th class="px-4 py-3 text-right w-32">Thành tiền</th>
+                        <th class="px-4 py-3 text-center w-10"></th>
                     </tr>
                     </thead>
-                    <tbody id="repairTableBody">
+                    <tbody id="cartItems">
                     <tr id="emptyRow">
-                        <td colspan="5" class="px-4 py-10 text-center text-gray-400">Chưa có hạng mục nào.</td>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-400 italic">
+                            Chưa có linh kiện nào được chọn
+                        </td>
                     </tr>
                     </tbody>
+                    <tfoot class="bg-gray-50 font-bold text-gray-800">
+                    <tr>
+                        <td colspan="3" class="px-4 py-3 text-right">Tiền công thợ:</td>
+                        <td class="px-4 py-3 text-right">
+                            <input type="number" id="laborCost" name="labor_cost" class="form-control"
+       value="{{ labor_cost if labor_cost else 0 }}" placeholder="Nhập tiền công...">
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="px-4 py-3 text-right text-gray-500 font-normal">Tổng vật tư:</td>
+                        <td class="px-4 py-3 text-right" id="subTotalParts">0</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="px-4 py-3 text-right text-gray-500 font-normal">VAT ({{ (vat_rate *
+                            100)|int }}%):
+                        </td>
+                        <td class="px-4 py-3 text-right" id="vatAmount">0</td>
+                        <td></td>
+                    </tr>
+                    <tr class="text-blue-600 text-lg">
+                        <td colspan="3" class="px-4 py-3 text-right">TỔNG CỘNG BÁO GIÁ:</td>
+                        <td class="px-4 py-3 text-right" id="finalTotal">0</td>
+                        <td></td>
+                    </tr>
+                    </tfoot>
                 </table>
             </div>
 
-            <!-- Footer -->
-            <form method="post" id="mainForm" class="p-4 border-t border-gray-100 bg-gray-50">
-                <input type="hidden" name="items_json" id="hiddenItems">
-                <input type="hidden" name="action" id="hiddenAction">
+            <div class="flex justify-between items-center pt-4 border-t border-gray-100">
+                <button type="button" onclick="printQuote()"
+                        class="text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 font-medium rounded-lg text-sm px-5 py-2.5 text-center flex items-center">
+                    <i class="fa-solid fa-print mr-2"></i> In Báo Giá
+                </button>
 
-                <div class="flex justify-between items-center mb-4">
-                    <div class="w-1/3">
-                        <label class="block text-xs font-bold text-gray-600 uppercase">Tiền công (VNĐ)</label>
-                        <input type="number" name="labor_cost" id="laborInput" value="0" oninput="updateTotal()"
-                               class="w-full border border-gray-300 rounded p-1.5 font-bold text-gray-800">
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-gray-500 uppercase font-bold">Tổng tạm tính</p>
-                        <p class="text-2xl font-bold text-blue-600" id="grandTotal">0 đ</p>
-                    </div>
-                </div>
-
-                <div class="flex gap-3">
-                    <button type="button" onclick="submitForm('draft')"
-                            class="flex-1 py-2 border border-blue-600 text-blue-600 rounded-lg font-bold hover:bg-blue-50">
-                        <i class="fa-regular fa-floppy-disk mr-1"></i> Lưu Nháp
+                <div class="space-x-2">
+                    <button type="submit" name="action" value="draft"
+                            class="text-gray-700 bg-yellow-100 hover:bg-yellow-200 border border-yellow-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+                        <i class="fa-regular fa-save mr-2"></i> Lưu Nháp
                     </button>
-                    <button type="button" onclick="submitForm('save')"
-                            class="flex-1 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 shadow-sm">
-                        <i class="fa-solid fa-check mr-1"></i> Hoàn thành
+                    <button type="submit" name="action" value="confirm"
+                            onclick="return confirm('Xác nhận khách đã đồng ý? Kho sẽ được trừ ngay lập tức.')"
+                            class="text-white bg-blue-600 hover:bg-blue-700 font-bold rounded-lg text-sm px-5 py-2.5 text-center shadow-md">
+                        <i class="fa-solid fa-check mr-2"></i> Khách Đồng Ý & Sửa
                     </button>
                 </div>
-            </form>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="printArea" class="hidden">
+    <div style="font-family: 'Courier New', monospace; max-width: 80mm; margin: 0 auto; font-size: 12px;">
+        <div style="text-align: center; margin-bottom: 10px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: bold;">GARAGE OTO PRO</h3>
+            <p style="margin: 2px;">BÁO GIÁ SỬA CHỮA</p>
+            <p>Ngày: {{ ticket.ngay_tiep_nhan.strftime('%d/%m/%Y') }}</p>
+        </div>
+        <hr style="border-top: 1px dashed #000;">
+        <div style="margin: 5px 0;">
+            <div><strong>Xe:</strong> {{ ticket.xe.bien_so }} ({{ ticket.xe.hieu_xe }})</div>
+            <div><strong>Chủ xe:</strong> {{ ticket.xe.khach_hang.ten }}</div>
+            <div><strong>Lỗi:</strong> {{ ticket.tinh_trang }}</div>
+        </div>
+        <hr style="border-top: 1px dashed #000;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+            <thead>
+            <tr style="text-align: left; border-bottom: 1px solid #000;">
+                <th style="padding: 2px;">Hạng mục</th>
+                <th style="padding: 2px; text-align: center;">SL</th>
+                <th style="padding: 2px; text-align: right;">Thành tiền</th>
+            </tr>
+            </thead>
+            <tbody id="printBody">
+            </tbody>
+        </table>
+        <hr style="border-top: 1px solid #000; margin: 5px 0;">
+        <div style="text-align: right;">
+            <div>Cộng: <span id="printSubtotal">0</span></div>
+            <div>Tiền công: <span id="printLabor">0</span></div>
+            <div>VAT: <span id="printVAT">0</span></div>
+            <div style="font-weight: bold; font-size: 14px; margin-top: 5px;">TỔNG: <span id="printTotal">0</span></div>
+        </div>
+        <div style="margin-top: 20px; text-align: center; font-style: italic;">
+            <p>Báo giá có giá trị trong ngày.</p>
+            <br><br>
+            <p>Xác nhận của khách hàng</p>
         </div>
     </div>
 </div>
 
 <script>
-    let cart = [];
-    document.addEventListener("DOMContentLoaded", () => searchParts(''));
+    // --- 1. HỨNG DỮ LIỆU TỪ SERVER (PYTHON) ---
+    // Python gửi dictionary, ta cần convert sang Array để JS xử lý
+    const serverCartData = {{ cart | tojson | default('{}') }};
 
-    function searchParts(kw) {
-        fetch(`/api/parts/search?kw=${kw}`).then(r=>r.json()).then(data => {
-            const div = document.getElementById('partResults');
-            if(data.length === 0) { div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">Không tìm thấy.</p>'; return; }
-            let h = '';
-            data.forEach(p => {
-                const disable = p.ton <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-50 cursor-pointer';
-                const action = p.ton > 0 ? `onclick="addItem(${p.id}, '${p.ten}', ${p.gia}, ${p.ton})"` : '';
-                const tonLabel = p.ton > 0 ? `<span class="text-green-600 bg-green-100 px-2 rounded text-[10px]">Kho: ${p.ton}</span>` : `<span class="text-red-500 bg-red-100 px-2 rounded text-[10px]">Hết hàng</span>`;
-                h += `<div class="border p-2 rounded flex justify-between items-center mb-2 shadow-sm ${disable}" ${action}>
-                        <div class="pr-2 flex-1"><p class="font-bold text-gray-800 text-xs truncate" title="${p.ten}">${p.ten}</p><div class="mt-1">${tonLabel}</div></div>
-                        <div class="text-right"><p class="text-xs font-bold text-blue-600">${p.gia.toLocaleString()} đ</p></div>
-                      </div>`;
-            });
-            div.innerHTML = h;
-        });
-    }
+    // Nếu serverCartData là mảng thì dùng luôn, nếu là object (dict) thì lấy values
+    let cart = Array.isArray(serverCartData) ? serverCartData : Object.values(serverCartData);
 
-    function addItem(id, name, price, stock) {
-        const exist = cart.find(x => x.id === id);
-        if(exist) { if(exist.qty < stock) exist.qty++; else alert('Hết hàng!'); }
-        else { cart.push({id, name, price, qty: 1, stock}); }
-        renderTable();
-    }
+    let vatRate = parseFloat(document.getElementById('vat_rate').value) || 0;
 
-    function renderTable() {
-        const tbody = document.getElementById('repairTableBody');
-        tbody.innerHTML = '';
-        let total = 0;
-        if(cart.length === 0) tbody.innerHTML = '<tr id="emptyRow"><td colspan="5" class="px-4 py-10 text-center text-gray-400">Chưa có hạng mục nào.</td></tr>';
-        else {
-            cart.forEach((item, index) => {
-                const sub = item.price * item.qty;
-                total += sub;
-                tbody.innerHTML += `
-                <tr class="border-b hover:bg-gray-50"><td class="px-4 py-2 text-xs font-medium">${item.name}</td>
-                    <td class="px-4 py-2 text-center"><input type="number" min="1" max="${item.stock}" value="${item.qty}" onchange="updateQty(${index}, this.value)" class="w-12 text-center border rounded p-1 text-xs"></td>
-                    <td class="px-4 py-2 text-right text-xs">${item.price.toLocaleString()}</td>
-                    <td class="px-4 py-2 text-right font-bold text-xs">${sub.toLocaleString()}</td>
-                    <td class="px-4 py-2 text-center"><button onclick="removeItem(${index})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+    // --- 2. TÌM KIẾM LINH KIỆN ---
+    const searchInput = document.getElementById('searchPart');
+    const searchResults = document.getElementById('searchResults');
+    let debounceTimer;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+
+        if (query.length < 2) {
+            searchResults.classList.add('hidden');
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            fetch(`/api/parts/search?kw=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    searchResults.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100';
+                            div.innerHTML = `
+                                <div class="font-bold text-gray-800">${item.ten}</div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>Tồn: <b class="${item.ton > 0 ? 'text-green-600' : 'text-red-600'}">${item.ton}</b></span>
+                                    <span>Giá: <b>${formatCurrency(item.gia)}</b></span>
+                                </div>
+                            `;
+                            div.onclick = () => addToCart(item);
+                            searchResults.appendChild(div);
+                        });
+                        searchResults.classList.remove('hidden');
+                    } else {
+                        searchResults.innerHTML = '<div class="p-3 text-gray-500 italic text-center">Không tìm thấy linh kiện</div>';
+                        searchResults.classList.remove('hidden');
+                    }
+                });
+        }, 300);
+    });
+
+    // Ẩn kết quả tìm kiếm khi click ra ngoài
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.classList.add('hidden');
+        }
+    });
+
+    // --- 3. CÁC HÀM XỬ LÝ GIỎ HÀNG ---
+    function addToCart(item) {
+        const existingItem = cart.find(i => i.id === item.id);
+        if (existingItem) {
+            if (existingItem.qty < item.ton) {
+                existingItem.qty++;
+            } else {
+                alert('Đã hết hàng tồn kho!');
+            }
+        } else {
+            if (item.ton <= 0) {
+                alert('Sản phẩm này đã hết hàng!');
+                return;
+            }
+            cart.push({
+                id: item.id,
+                name: item.ten,
+                price: item.gia,
+                qty: 1,
+                max: item.ton
             });
         }
-        updateTotal(total);
+        searchInput.value = '';
+        searchResults.classList.add('hidden');
+        renderCart();
     }
 
-    function updateQty(idx, val) {
-        val = parseInt(val);
-        if(val > cart[idx].stock) { alert('Vượt quá tồn kho!'); val = cart[idx].stock; }
-        if(val < 1) val = 1;
-        cart[idx].qty = val; renderTable();
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        renderCart();
     }
 
-    function removeItem(idx) { cart.splice(idx, 1); renderTable(); }
-    function removeAll() { cart = []; renderTable(); }
-
-    function updateTotal(itemsTotal = null) {
-        if(itemsTotal === null) itemsTotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
-        const labor = parseFloat(document.getElementById('laborInput').value) || 0;
-        document.getElementById('grandTotal').innerText = (itemsTotal + labor).toLocaleString() + ' đ';
+    function updateQty(index, newQty) {
+        newQty = parseInt(newQty);
+        if (newQty <= 0) {
+            removeFromCart(index);
+            return;
+        }
+        // Lưu ý: Nếu là load lại từ nháp, max (tồn kho) có thể chưa có thông tin chính xác
+        // Tạm thời bỏ qua check max khi load từ draft, hoặc bạn phải query lại tồn kho
+        if (cart[index].max && newQty > cart[index].max) {
+             alert(`Kho chỉ còn ${cart[index].max} sản phẩm!`);
+             cart[index].qty = cart[index].max;
+        } else {
+            cart[index].qty = newQty;
+        }
+        renderCart();
     }
 
-    function submitForm(action) {
-        const labor = document.getElementById('laborInput').value;
-        if(cart.length === 0 && labor == 0) { alert("Vui lòng nhập liệu!"); return; }
+    function renderCart() {
+        const tbody = document.getElementById('cartItems');
+        const emptyRow = document.getElementById('emptyRow');
+        tbody.innerHTML = '';
 
-        document.getElementById('hiddenItems').value = JSON.stringify(cart);
-        document.getElementById('hiddenAction').value = action;
-        document.getElementById('mainForm').submit();
+        if (cart.length === 0) {
+            // Tạo lại dòng trống nếu cart rỗng
+            const tr = document.createElement('tr');
+            tr.id = 'emptyRow';
+            tr.innerHTML = '<td colspan="5" class="px-4 py-8 text-center text-gray-400 italic">Chưa có linh kiện nào được chọn</td>';
+            tbody.appendChild(tr);
+        }
+
+        let subTotalParts = 0;
+
+        cart.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.className = 'bg-white border-b hover:bg-gray-50';
+            const total = item.price * item.qty;
+            subTotalParts += total;
+
+            // Xử lý max qty để hiển thị (nếu không có max thì để số lớn)
+            const maxVal = item.max || 9999;
+
+            row.innerHTML = `
+                <td class="px-4 py-3 font-medium text-gray-900">${item.name}</td>
+                <td class="px-4 py-3 text-center">
+                    <input type="number" value="${item.qty}" min="1" max="${maxVal}"
+                           class="w-16 text-center border border-gray-300 rounded text-sm p-1"
+                           onchange="updateQty(${index}, this.value)">
+                </td>
+                <td class="px-4 py-3 text-right">${formatCurrency(item.price)}</td>
+                <td class="px-4 py-3 text-right font-bold">${formatCurrency(total)}</td>
+                <td class="px-4 py-3 text-center">
+                    <button type="button" onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        // Update Hidden Input for Form Submit
+        document.getElementById('items_json').value = JSON.stringify(cart);
+        document.getElementById('subTotalParts').innerText = formatCurrency(subTotalParts);
+        updateTotal(subTotalParts);
     }
 
-    function cancelRepair() { if(confirm('Hủy bỏ?')) window.location.reload(); }
+    function updateTotal(partsTotal = null) {
+        if (partsTotal === null) {
+            partsTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        }
+
+        // Lấy giá trị tiền công (đã sửa ID ở trên thành laborCost)
+        const laborInput = document.getElementById('laborCost');
+        const labor = laborInput ? (parseFloat(laborInput.value) || 0) : 0;
+
+        const subTotal = partsTotal + labor;
+        const vat = subTotal * vatRate;
+        const final = subTotal + vat;
+
+        document.getElementById('vatAmount').innerText = formatCurrency(vat);
+        document.getElementById('finalTotal').innerText = formatCurrency(final);
+    }
+
+    // Sự kiện khi thay đổi tiền công -> Tính lại tổng
+    const laborInputEl = document.getElementById('laborCost');
+    if(laborInputEl) {
+        laborInputEl.addEventListener('input', () => updateTotal());
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN').format(amount);
+    }
+
+    function printQuote() {
+        const printBody = document.getElementById('printBody');
+        printBody.innerHTML = '';
+        let partsTotal = 0;
+        cart.forEach(item => {
+            const total = item.price * item.qty;
+            partsTotal += total;
+            printBody.innerHTML += `
+                <tr style="border-bottom: 1px dotted #ccc;">
+                    <td style="padding: 4px 2px;">${item.name}</td>
+                    <td style="padding: 4px 2px; text-align: center;">${item.qty}</td>
+                    <td style="padding: 4px 2px; text-align: right;">${formatCurrency(total)}</td>
+                </tr>
+            `;
+        });
+        const labor = parseFloat(document.getElementById('laborCost').value) || 0;
+        const vat = (partsTotal + labor) * vatRate;
+        const final = partsTotal + labor + vat;
+
+        document.getElementById('printSubtotal').innerText = formatCurrency(partsTotal);
+        document.getElementById('printLabor').innerText = formatCurrency(labor);
+        document.getElementById('printVAT').innerText = formatCurrency(vat);
+        document.getElementById('printTotal').innerText = formatCurrency(final);
+
+        const content = document.getElementById('printArea').innerHTML;
+        const win = window.open('', '', 'height=600,width=400');
+        win.document.write('<html><head><title>Báo Giá</title></head><body>');
+        win.document.write(content);
+        win.document.write('</body></html>');
+        win.document.close();
+        win.focus();
+        setTimeout(() => win.print(), 500);
+    }
+
+    // --- 4. QUAN TRỌNG: CHẠY HÀM NÀY KHI VỪA VÀO TRANG ĐỂ HIỆN DỮ LIỆU ---
+    renderCart();
+
 </script>
 {% endblock %}

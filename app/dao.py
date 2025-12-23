@@ -155,27 +155,52 @@ def save_repair_ticket_v2(phieu_tiep_nhan_id, nguoi_dung_id, items, labor_cost, 
         is_draft = (action == 'draft')
         status_enum = TrangThaiPhieuSua.NHAP if is_draft else TrangThaiPhieuSua.HOAN_THANH
 
-        phieu_sua = PhieuSuaChua(
-            phieu_tiep_nhan_id=phieu_tiep_nhan_id,
-            nguoi_dung_id=nguoi_dung_id,
-            tien_cong=labor_cost,
-            ngay_sua=datetime.now(),
-            trang_thai_phieu=status_enum
-        )
-        db.session.add(phieu_sua)
+        # 1. KIỂM TRA: Tìm xem phiếu sửa chữa đã tồn tại chưa?
+        stmt = select(PhieuSuaChua).where(PhieuSuaChua.phieu_tiep_nhan_id == phieu_tiep_nhan_id)
+        phieu_sua = db.session.execute(stmt).scalar_one_or_none()
+
+        if phieu_sua:
+            # --- UPDATE (Nếu đã có) ---
+            phieu_sua.nguoi_dung_id = nguoi_dung_id
+            phieu_sua.tien_cong = labor_cost
+            phieu_sua.ngay_sua = datetime.now()
+            phieu_sua.trang_thai_phieu = status_enum
+
+            # QUAN TRỌNG: Xóa các chi tiết linh kiện cũ để nạp lại danh sách mới từ form
+            # (Tránh bị trùng lặp linh kiện cũ + linh kiện mới)
+            for old_detail in phieu_sua.chi_tiet:
+                db.session.delete(old_detail)
+
+        else:
+            # --- INSERT (Nếu chưa có) ---
+            phieu_sua = PhieuSuaChua(
+                phieu_tiep_nhan_id=phieu_tiep_nhan_id,
+                nguoi_dung_id=nguoi_dung_id,
+                tien_cong=labor_cost,
+                ngay_sua=datetime.now(),
+                trang_thai_phieu=status_enum
+            )
+            db.session.add(phieu_sua)
+
+        # Đẩy thay đổi Header xuống DB để lấy ID (nếu là tạo mới)
         db.session.flush()
 
+        # 2. XỬ LÝ DANH SÁCH LINH KIỆN (Thêm mới lại từ đầu)
         for item in items:
             lk_id = int(item['id'])
             qty = int(item['qty'])
             price = float(item['price'])
+
+            # Logic trừ tồn kho (giữ nguyên như cũ của bạn)
             lk = db.session.get(LinhKien, lk_id)
             if not is_draft:
                 if lk.so_luong_ton < qty: raise Exception(f"Linh kiện '{lk.ten}' không đủ hàng.")
                 lk.so_luong_ton -= qty
+
             ct = ChiTietPhieuSua(phieu_sua_chua_id=phieu_sua.id, linh_kien_id=lk_id, so_luong=qty, don_gia=price)
             db.session.add(ct)
 
+        # Cập nhật trạng thái phiếu tiếp nhận
         ptn = db.session.get(PhieuTiepNhan, phieu_tiep_nhan_id)
         if not is_draft: ptn.trang_thai = TrangThaiPhieu.DANG_SUA
 
@@ -358,3 +383,25 @@ def get_revenue(month, year):
         extract('month', HoaDon.ngay_thanh_toan) == month, extract('year', HoaDon.ngay_thanh_toan) == year).group_by(
         func.date(HoaDon.ngay_thanh_toan))
     return db.session.execute(stmt).all()
+
+
+def get_daily_limit():
+    qd = db.session.execute(select(QuyDinh).where(QuyDinh.ten == 'MAX_XE')).scalar_one_or_none()
+    return int(qd.gia_tri) if qd else 30
+
+
+def change_password(user_id, old_pass, new_pass):
+    user = get_user_by_id(user_id)
+    if not user:
+        return False, "Người dùng không tồn tại."
+
+    # Kiểm tra mật khẩu cũ
+    hash_old = hashlib.md5(old_pass.strip().encode('utf-8')).hexdigest()
+    if user.mat_khau != hash_old:
+        return False, "Mật khẩu cũ không đúng."
+
+    # Cập nhật mật khẩu mới
+    user.mat_khau = hashlib.md5(new_pass.strip().encode('utf-8')).hexdigest()
+    db.session.commit()
+
+    return True, "Đổi mật khẩu thành công!"
