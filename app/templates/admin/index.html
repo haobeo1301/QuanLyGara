@@ -1,0 +1,239 @@
+{% extends 'admin/master.html' %}
+
+{% block head %}
+    {{ super() }}
+    <style>
+        body { background-color: #f8f9fc; }
+
+        /* Style cho Card thống kê */
+        .stat-card {
+            border: none;
+            border-radius: 0.75rem; /* Bo tròn mềm mại */
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15); /* Đổ bóng xịn */
+            transition: all 0.3s ease; /* Hiệu ứng mượt */
+            background: #fff;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        /* Hiệu ứng khi rê chuột */
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.25);
+        }
+
+        /* Đường viền màu bên trái để phân loại */
+        .border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+        .border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+        .border-left-info    { border-left: 0.25rem solid #36b9cc !important; }
+        .border-left-warning { border-left: 0.25rem solid #f6c23e !important; }
+
+        /* Icon trang trí mờ */
+        .icon-overlay {
+            color: #dddfeb;
+            font-size: 4rem; /* Icon to hẳn lên */
+            opacity: 0.5;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+
+        .stat-text { position: relative; z-index: 1; }
+        .text-xs { font-size: .7rem; }
+        .text-gray-800 { color: #5a5c69; }
+        .font-weight-bold { font-weight: 700 !important; }
+
+        /* Style cho nút lối tắt */
+        .shortcut-btn {
+            border-radius: 10px;
+            padding: 15px;
+            text-align: left;
+            transition: all 0.2s;
+            border: 1px solid #e3e6f0;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            text-decoration: none !important;
+            color: #5a5c69;
+            background: #fff;
+        }
+        .shortcut-btn:hover {
+            background-color: #f8f9fc;
+            border-color: #4e73df;
+            color: #4e73df;
+            transform: translateX(5px);
+        }
+        .shortcut-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #eaecf4;
+            margin-right: 15px;
+            color: #4e73df;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid pt-4">
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800" style="font-family: sans-serif; font-weight: 600;">
+            <i class="fa fa-dashboard mr-2 text-primary"></i>Dashboard
+        </h1>
+        <span class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm disabled">
+            <i class="fa fa-calendar fa-sm text-white-50"></i> Báo cáo hôm nay
+        </span>
+    </div>
+
+    <div class="row">
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card border-left-success py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2 stat-text">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Tổng Doanh Thu
+                            </div>
+                            <div class="h4 mb-0 font-weight-bold text-gray-800">
+                                {{"{:,.0f}".format(stats.revenue)}} <small>đ</small>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fa fa-dollar icon-overlay"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card border-left-primary py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2 stat-text">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Xe Đã Tiếp Nhận
+                            </div>
+                            <div class="h4 mb-0 font-weight-bold text-gray-800">
+                                {{ stats.receptions }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fa fa-car icon-overlay"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card border-left-info py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2 stat-text">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Kho Linh Kiện
+                            </div>
+                            <div class="h4 mb-0 font-weight-bold text-gray-800">
+                                {{ stats.parts }} <small class="text-muted text-xs">mã hàng</small>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fa fa-cogs icon-overlay"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stat-card border-left-warning py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2 stat-text">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Nhân Sự Hệ Thống
+                            </div>
+                            <div class="h4 mb-0 font-weight-bold text-gray-800">
+                                {{ stats.users }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fa fa-users icon-overlay"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4" style="border:none; border-radius: 0.75rem;">
+                <div class="card-header py-3 bg-white d-flex align-items-center" style="border-bottom: 1px solid #e3e6f0; border-radius: 0.75rem 0.75rem 0 0;">
+                    <h6 class="m-0 font-weight-bold text-primary">Quản Lý Nhanh</h6>
+                </div>
+                <div class="card-body">
+                    <a href="/admin/nguoidung" class="shortcut-btn">
+                        <div class="shortcut-icon bg-primary text-white">
+                            <i class="fa fa-user-plus"></i>
+                        </div>
+                        <div>
+                            <span class="font-weight-bold d-block text-dark">Quản lý người dùng</span>
+                            <span class="text-xs text-muted">Thêm nhân viên, đổi mật khẩu, phân quyền</span>
+                        </div>
+                    </a>
+
+                    <a href="/admin/linhkien" class="shortcut-btn">
+                        <div class="shortcut-icon bg-success text-white">
+                            <i class="fa fa-cubes"></i>
+                        </div>
+                        <div>
+                            <span class="font-weight-bold d-block text-dark">Quản lý kho hàng</span>
+                            <span class="text-xs text-muted">Nhập linh kiện mới, cập nhật giá và tồn kho</span>
+                        </div>
+                    </a>
+
+                    <a href="/admin/quydinh" class="shortcut-btn">
+                        <div class="shortcut-icon bg-danger text-white">
+                            <i class="fa fa-sliders"></i>
+                        </div>
+                        <div>
+                            <span class="font-weight-bold d-block text-dark">Tham số hệ thống</span>
+                            <span class="text-xs text-muted">Chỉnh sửa số lượng xe tối đa, VAT...</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4" style="border:none; border-radius: 0.75rem;">
+                <div class="card-header py-3 bg-white" style="border-bottom: 1px solid #e3e6f0; border-radius: 0.75rem 0.75rem 0 0;">
+                    <h6 class="m-0 font-weight-bold text-primary">Lưu ý quản trị</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img class="img-fluid px-3 px-sm-4 mt-3 mb-4" style="width: 15rem;"
+                             src="https://cdn-icons-png.flaticon.com/512/2942/2942813.png" alt="Admin illustration">
+                    </div>
+                    <p>Chào mừng bạn đến với trang quản trị cao cấp. Tại đây bạn có toàn quyền thay đổi dữ liệu nền tảng.</p>
+                    <p class="mb-0 text-muted" style="font-size: 0.9rem;">
+                        <i class="fa fa-info-circle mr-1"></i>
+                        Hãy cẩn thận khi xóa dữ liệu "Linh kiện" hoặc "Hãng xe" vì có thể ảnh hưởng đến các phiếu sửa chữa lịch sử.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

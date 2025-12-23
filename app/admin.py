@@ -2,9 +2,11 @@ from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
 from flask import redirect, url_for
-from app.models import NguoiDung, LinhKien, DanhMuc, QuyDinh, UserRole, HieuXe
+from app.models import NguoiDung, LinhKien, DanhMuc, QuyDinh, UserRole, HieuXe, HoaDon, PhieuTiepNhan
 from wtforms.validators import DataRequired
 import hashlib
+from app import db
+from sqlalchemy import func
 
 
 class BaseAdminView(ModelView):
@@ -65,3 +67,21 @@ def init_admin(app, db):
     admin.add_view(LinhKienView(LinhKien, db.session, name='Linh kiện'))
     admin.add_view(DanhMucView(DanhMuc, db.session, name='Danh mục'))
     admin.add_view(QuyDinhView(QuyDinh, db.session, name='Quy định'))
+
+
+class HomeAdmin(AdminIndexView):
+    @expose('/')
+    def index(self):
+        if not current_user.is_authenticated or current_user.vai_tro != UserRole.ADMIN:
+            return redirect(url_for('main.login_view'))
+
+        # --- THÊM CODE THỐNG KÊ ---
+        stats = {
+            'users': db.session.query(func.count(NguoiDung.id)).scalar(),
+            'parts': db.session.query(func.count(LinhKien.id)).scalar(),
+            'receptions': db.session.query(func.count(PhieuTiepNhan.id)).scalar(),
+            'revenue': db.session.query(func.sum(HoaDon.so_tien)).scalar() or 0
+        }
+
+        # Thay vì gọi super().index(), ta render template riêng và truyền biến stats
+        return self.render('admin/index.html', stats=stats)
