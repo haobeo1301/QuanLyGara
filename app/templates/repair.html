@@ -163,13 +163,9 @@
 </div>
 
 <script>
-    // --- 1. HỨNG DỮ LIỆU TỪ SERVER (PYTHON) ---
-    // Python gửi dictionary, ta cần convert sang Array để JS xử lý
+    // --- 1. HỨNG DỮ LIỆU TỪ SERVER ---
     const serverCartData = {{ cart | tojson | default('{}') }};
-
-    // Nếu serverCartData là mảng thì dùng luôn, nếu là object (dict) thì lấy values
     let cart = Array.isArray(serverCartData) ? serverCartData : Object.values(serverCartData);
-
     let vatRate = parseFloat(document.getElementById('vat_rate').value) || 0;
 
     // --- 2. TÌM KIẾM LINH KIỆN ---
@@ -180,12 +176,10 @@
     searchInput.addEventListener('input', function() {
         clearTimeout(debounceTimer);
         const query = this.value.trim();
-
         if (query.length < 2) {
             searchResults.classList.add('hidden');
             return;
         }
-
         debounceTimer = setTimeout(() => {
             fetch(`/api/parts/search?kw=${encodeURIComponent(query)}`)
                 .then(res => res.json())
@@ -214,7 +208,6 @@
         }, 300);
     });
 
-    // Ẩn kết quả tìm kiếm khi click ra ngoài
     document.addEventListener('click', function(e) {
         if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
             searchResults.classList.add('hidden');
@@ -259,8 +252,6 @@
             removeFromCart(index);
             return;
         }
-        // Lưu ý: Nếu là load lại từ nháp, max (tồn kho) có thể chưa có thông tin chính xác
-        // Tạm thời bỏ qua check max khi load từ draft, hoặc bạn phải query lại tồn kho
         if (cart[index].max && newQty > cart[index].max) {
              alert(`Kho chỉ còn ${cart[index].max} sản phẩm!`);
              cart[index].qty = cart[index].max;
@@ -272,11 +263,9 @@
 
     function renderCart() {
         const tbody = document.getElementById('cartItems');
-        const emptyRow = document.getElementById('emptyRow');
         tbody.innerHTML = '';
 
         if (cart.length === 0) {
-            // Tạo lại dòng trống nếu cart rỗng
             const tr = document.createElement('tr');
             tr.id = 'emptyRow';
             tr.innerHTML = '<td colspan="5" class="px-4 py-8 text-center text-gray-400 italic">Chưa có linh kiện nào được chọn</td>';
@@ -286,12 +275,20 @@
         let subTotalParts = 0;
 
         cart.forEach((item, index) => {
+            // [FIX QUANTITY ISSUE] Kiểm tra an toàn
+            // Nếu item.qty bị null nhưng có item.quantity thì lấy quantity (đề phòng dữ liệu cũ)
+            if (!item.qty && item.quantity) {
+                item.qty = item.quantity;
+            }
+            // Nếu vẫn không có thì mặc định là 1
+            if (!item.qty) {
+                item.qty = 1;
+            }
+
             const row = document.createElement('tr');
             row.className = 'bg-white border-b hover:bg-gray-50';
             const total = item.price * item.qty;
             subTotalParts += total;
-
-            // Xử lý max qty để hiển thị (nếu không có max thì để số lớn)
             const maxVal = item.max || 9999;
 
             row.innerHTML = `
@@ -312,7 +309,6 @@
             tbody.appendChild(row);
         });
 
-        // Update Hidden Input for Form Submit
         document.getElementById('items_json').value = JSON.stringify(cart);
         document.getElementById('subTotalParts').innerText = formatCurrency(subTotalParts);
         updateTotal(subTotalParts);
@@ -322,20 +318,15 @@
         if (partsTotal === null) {
             partsTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
         }
-
-        // Lấy giá trị tiền công (đã sửa ID ở trên thành laborCost)
         const laborInput = document.getElementById('laborCost');
         const labor = laborInput ? (parseFloat(laborInput.value) || 0) : 0;
-
         const subTotal = partsTotal + labor;
         const vat = subTotal * vatRate;
         const final = subTotal + vat;
-
         document.getElementById('vatAmount').innerText = formatCurrency(vat);
         document.getElementById('finalTotal').innerText = formatCurrency(final);
     }
 
-    // Sự kiện khi thay đổi tiền công -> Tính lại tổng
     const laborInputEl = document.getElementById('laborCost');
     if(laborInputEl) {
         laborInputEl.addEventListener('input', () => updateTotal());
@@ -363,7 +354,6 @@
         const labor = parseFloat(document.getElementById('laborCost').value) || 0;
         const vat = (partsTotal + labor) * vatRate;
         const final = partsTotal + labor + vat;
-
         document.getElementById('printSubtotal').innerText = formatCurrency(partsTotal);
         document.getElementById('printLabor').innerText = formatCurrency(labor);
         document.getElementById('printVAT').innerText = formatCurrency(vat);
@@ -379,7 +369,6 @@
         setTimeout(() => win.print(), 500);
     }
 
-    // --- 4. QUAN TRỌNG: CHẠY HÀM NÀY KHI VỪA VÀO TRANG ĐỂ HIỆN DỮ LIỆU ---
     renderCart();
 
 </script>

@@ -156,27 +156,14 @@ def repair():
         flash('Phiếu không tồn tại.', 'danger')
         return redirect(url_for('main.tech_dashboard'))
 
-    # Lấy VAT config
     vat_rate = dao.get_config_vat() or 0.0
 
-    # -----------------------------------------------------------
-    # [NEW CODE] LOGIC TẢI BẢN NHÁP TỪ DATABASE (NẾU CÓ)
-    # -----------------------------------------------------------
-    # Mặc định lấy từ session (nếu đang thao tác dở)
     cart_data = session.get('cart', {})
     labor_cost_value = 0.0
 
-    # Nếu Request là GET (mới mở trang) và Phiếu này đã có bản lưu trong DB
     if request.method == 'GET' and ticket.phieu_sua_chua:
-        # Nếu session đang trống (hoặc bạn muốn ưu tiên DB), hãy load từ DB lên
-        # Lưu ý: ticket.phieu_sua_chua là quan hệ 1-1 trong models.py
         draft = ticket.phieu_sua_chua
-
-        # 1. Load tiền công đã lưu
         labor_cost_value = draft.tien_cong
-
-        # 2. Load danh sách linh kiện đã lưu vào biến cart_data
-        # Cấu trúc phải giống hệt lúc bạn lưu vào session (id, name, price, qty)
         cart_data = {}
         for ct in draft.chi_tiet:
             s_id = str(ct.linh_kien_id)
@@ -184,17 +171,12 @@ def repair():
                 'id': ct.linh_kien_id,
                 'name': ct.linh_kien.ten,
                 'price': ct.don_gia,
-
-                # --- SỬA Ở ĐÂY ---
-                'qty': ct.so_luong,  # Đổi 'quantity' thành 'qty' cho khớp với JS
-                'max': ct.linh_kien.so_luong_ton  # Thêm dòng này để JS biết giới hạn tồn kho
+                'qty': ct.so_luong,
+                'max': ct.linh_kien.so_luong_ton
             }
 
-        # Cập nhật lại session để thao tác tiếp theo (xóa/sửa) được đồng bộ
         session['cart'] = cart_data
-
         flash(f"Đã tải lại bản nháp (Lần sửa cuối: {draft.ngay_sua.strftime('%H:%M %d/%m')})", "info")
-    # -----------------------------------------------------------
 
     if request.method == 'POST':
         try:
@@ -207,7 +189,6 @@ def repair():
             else:
                 ok, msg = dao.save_repair_ticket_v2(pid, current_user.id, items, labor, action)
                 if ok:
-                    # Nếu lưu thành công (đặc biệt là Hoàn thành), có thể xóa cart session
                     if action != 'draft':
                         session['cart'] = {}
                     flash(msg, 'success')
@@ -217,30 +198,27 @@ def repair():
         except Exception as e:
             flash(f"Lỗi: {e}", "danger")
 
-    # Truyền cart_data và labor_cost_value xuống template
     return render_template(
         'repair.html',
         ticket=ticket,
         cart=cart_data,
         vat_rate=vat_rate,
-        labor_cost=labor_cost_value  # Cần sửa thêm ở template để hiển thị số này
+        labor_cost=labor_cost_value
     )
 
 
 @main.route('/payment', methods=['GET', 'POST'])
 @role_required(UserRole.ADMIN, UserRole.THU_NGAN)
 def payment():
-    # 1. Xử lý API thanh toán (POST)
     if request.method == 'POST':
         try:
             data = request.json
             repair_id = data.get('repair_id')
-            method = data.get('method')  # 'cash', 'transfer', 'pos'
+            method = data.get('method')
             discount = float(data.get('discount', 0))
             tendered = float(data.get('tendered', 0))
-            manual_vat = data.get('manual_vat')  # Có thể là None nếu đã cấu hình VAT trong DB
+            manual_vat = data.get('manual_vat')
 
-            # Gọi hàm xử lý nâng cao trong DAO
             result = dao.process_payment_advanced(
                 repair_id=repair_id,
                 user_id=current_user.id,
@@ -253,22 +231,15 @@ def payment():
         except Exception as e:
             return jsonify({"success": False, "msg": f"Lỗi Server: {str(e)}"})
 
-    # 2. Xử lý giao diện (GET)
-    # Lấy cấu hình VAT để hiển thị cho Frontend biết có cần nhập tay không
     current_vat = dao.get_config_vat()
-
-    # Lấy danh sách phiếu chờ thanh toán
     pending_list = dao.get_pending_payments()
-
     return render_template('payment.html', list=pending_list, vat_config=current_vat)
 
 
 @main.route('/report')
 @role_required(UserRole.ADMIN)
 def report():
-    # 1. Lấy tham số Filter
     report_type = request.args.get('type', 'revenue')
-    # Mặc định lấy tháng hiện tại
     now = datetime.now()
     default_start = now.replace(day=1).strftime('%Y-%m-%d')
     default_end = now.strftime('%Y-%m-%d')
@@ -276,17 +247,14 @@ def report():
     from_date = request.args.get('from_date', default_start)
     to_date = request.args.get('to_date', default_end)
 
-    # 2. Gọi DAO để lấy dữ liệu & Validate
     result = dao.get_report_data_by_range(from_date, to_date, report_type)
 
-    # 3. Xử lý kết quả trả về
     error_msg = None
     if "error" in result:
         flash(result["error"], "danger")
         error_msg = result["error"]
-        result = {"data": [], "summary": {"total": 0}}  # Reset data rỗng
+        result = {"data": [], "summary": {"total": 0}}
     elif not result["data"]:
-        # Trường hợp hợp lệ nhưng không có dữ liệu
         flash("Không có dữ liệu trong khoảng thời gian này.", "warning")
 
     return render_template('report.html',
@@ -294,8 +262,6 @@ def report():
                            filter={"from": from_date, "to": to_date, "type": report_type},
                            error_msg=error_msg)
 
-
-# app/routes.py (Đoạn hàm export_report)
 
 @main.route('/report/export')
 @role_required(UserRole.ADMIN)
@@ -312,25 +278,21 @@ def export_report():
             return redirect(url_for('main.report'))
 
         si = StringIO()
-        si.write('\ufeff')  # Thêm BOM để Excel đọc được tiếng Việt
+        si.write('\ufeff')
         cw = csv.writer(si)
 
-        # --- LOGIC HEADER MỚI ---
         if report_type == 'revenue':
             cw.writerow(['Ngày', 'Số hóa đơn', 'Doanh thu (VNĐ)'])
             for row in result['data']:
                 cw.writerow([row['label'], row['count'], "{:.0f}".format(row['value'])])
-
         elif report_type == 'reception':
             cw.writerow(['Ngày', 'Số lượng xe tiếp nhận'])
             for row in result['data']:
                 cw.writerow([row['label'], row['value']])
-
         elif report_type == 'parts':
             cw.writerow(['Tên linh kiện', 'Số lượng bán', 'Tổng doanh thu (VNĐ)'])
             for row in result['data']:
                 cw.writerow([row['label'], row['value'], "{:.0f}".format(row['total_money'])])
-
         elif report_type == 'issues':
             cw.writerow(['Tên lỗi / Tình trạng', 'Số lần gặp'])
             for row in result['data']:
@@ -345,8 +307,6 @@ def export_report():
         flash(f"Lỗi: {str(e)}", "danger")
         return redirect(url_for('main.report'))
 
-
-# --- Thêm vào file QuanLyGara/app/routes.py ---
 
 @main.route('/change-password', methods=['GET', 'POST'])
 @login_required
